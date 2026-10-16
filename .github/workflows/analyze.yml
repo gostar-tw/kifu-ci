@@ -1,0 +1,26 @@
+# 智多星 AI 小棋盤：每小時自動分析 AI 對弈、收發講評
+name: 棋譜自動分析
+on:
+  schedule:
+    - cron: '17 * * * *'      # 每小時第 17 分（UTC，跟台灣時間同一分）
+  workflow_dispatch:           # Actions 頁面可以手動按「Run workflow」
+concurrency:
+  group: kifu-analyze
+  cancel-in-progress: false    # 上一輪還在跑就排隊，不會兩輪同時拿同一盤
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - name: 安裝瀏覽器
+        run: npx playwright install --with-deps chromium
+      - name: 分析＋收發講評
+        env:
+          KIFU_URL: ${{ secrets.KIFU_URL }}
+          KIFU_KEY: ${{ secrets.KIFU_KEY }}
+        run: node ci.js 40
