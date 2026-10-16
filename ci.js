@@ -30,6 +30,13 @@ async function analyze(job, dir) {
   console.log(sh('python3', ['build.py', af, hf]).trim());
   return { af, hf };
 }
+/* 失敗馬上重試（最多 3 次，中間等 20 秒），真的不行才回報失敗 */
+async function analyzeRetry(job, dir) {
+  for (let i = 1; ; i++) {
+    try { return await analyze(job, dir); }
+    catch (e) { if (i >= 3) throw e; console.log('… ' + job.g + ' 第 ' + i + ' 次失敗，20 秒後重試：' + String(e.message).split('\n').pop()); await new Promise(r => setTimeout(r, 20000)); }
+  }
+}
 
 const C = 'ABCDEFGHJKLMNOPQRST';
 function brief(job, A, rules, talk) {
@@ -87,7 +94,7 @@ async function dispatch() {
     try {
       const g = await api({ action: 'exGet', g: job.g, html: 1 }); let A;
       if (g.ana) A = JSON.parse(g.ana);
-      else { if (!job.game) throw new Error('找不到棋譜'); const r = await analyze(job, dir); A = JSON.parse(fs.readFileSync(r.af, 'utf8')); }
+      else { if (!job.game) throw new Error('找不到棋譜'); const r = await analyzeRetry(job, dir); A = JSON.parse(fs.readFileSync(r.af, 'utf8')); }
       let talk = null; const m = /<script id="exdata" type="application\/json">([\s\S]*?)<\/script>/.exec(g.html || '');
       if (m) { const d = JSON.parse(m[1].replace(/<\\\//g, '</')); if (d.talk) talk = d.talk; }
       const r = await api({ action: 'exDrvPut', g: job.g, kind: job.kind, doc: brief(job, A, t.rules || [], talk) });
@@ -112,7 +119,7 @@ async function dispatch() {
     const job = p.jobs[0], dir = path.join(W, job.g);
     try {
       if (!job.game) throw new Error('找不到棋譜');
-      const { af, hf } = await analyze(job, dir);
+      const { af, hf } = await analyzeRetry(job, dir);
       await api({ action: 'exPut', kind: 'ana', g: job.g, html: fs.readFileSync(hf, 'utf8'), ana: fs.readFileSync(af, 'utf8') }); done++;
     } catch (e) {
       fail++; console.log('✗', job.g, e.message);
