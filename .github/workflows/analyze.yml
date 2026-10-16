@@ -2,7 +2,7 @@
 name: 棋譜自動分析
 on:
   schedule:
-    - cron: '17 * * * *'      # 每小時第 17 分（UTC，跟台灣時間同一分）
+    - cron: '17,50 * * * *'   # 每小時第 17、50 分（50 分那輪趕快收 Claude 第 36 分寫好的講評）
   workflow_dispatch:           # Actions 頁面可以手動按「Run workflow」
 concurrency:
   group: kifu-analyze
