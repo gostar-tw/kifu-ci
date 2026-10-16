@@ -17,6 +17,12 @@ jobs:
         with:
           node-version: 22
       - run: npm install --no-audit --no-fund
+      - name: 線上頁面快取（Google 偶爾擋 GitHub 機器時用）
+        uses: actions/cache@v4
+        with:
+          path: cache
+          key: kifu-page-${{ github.run_id }}
+          restore-keys: kifu-page-
       - name: 安裝瀏覽器
         run: npx playwright install --with-deps chromium
       - name: 分析＋收發講評
