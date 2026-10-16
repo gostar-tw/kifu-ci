@@ -7,12 +7,16 @@ const [,,GF,OUT,SIDE0]=process.argv;const g=JSON.parse(fs.readFileSync(GF,'utf8'
 const PAGE='https://www.gostar.tw/p/kifu.html';
 (async()=>{
  const MK='/* ---------- toolbar ---------- */';
+ /* Google 偶爾擋 GitHub 機器（回 3KB 的擋頁）：重抓幾次，還是不行就用上次成功存下的快取 */
+ const CACHE=require('path').join(__dirname,'cache','kifu.html');
  let html0='';
- for(let i=0;i<4;i++){ /* Blogger 偶爾回不完整的頁面：重抓幾次 */
-  try{html0=await (await fetch(PAGE+'?nc='+Date.now())).text();}catch(e){html0='';}
-  if(html0.indexOf(MK)>=0)break; await new Promise(r=>setTimeout(r,8000));
+ for(let i=0;i<3;i++){
+  try{html0=await (await fetch(PAGE+'?nc='+Date.now(),{headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36','Accept-Language':'zh-TW,zh;q=0.9'}})).text();}catch(e){html0='';}
+  if(html0.indexOf(MK)>=0)break; await new Promise(r=>setTimeout(r,5000));
  }
- if(html0.indexOf(MK)<0) throw new Error('線上頁面找不到插入點（抓了 4 次，長度 '+html0.length+'）');
+ if(html0.indexOf(MK)>=0){fs.mkdirSync(require('path').dirname(CACHE),{recursive:true});fs.writeFileSync(CACHE,html0);}
+ else if(fs.existsSync(CACHE)){console.log('線上頁面抓不到（長度 '+html0.length+'），改用快取');html0=fs.readFileSync(CACHE,'utf8');}
+ if(html0.indexOf(MK)<0) throw new Error('線上頁面找不到插入點，也沒有快取（長度 '+html0.length+'）：'+html0.replace(/\s+/g,' ').slice(0,160));
  const html=html0.replace(MK,'window.__t={S:function(){return S},build:build,aiEval:aiEval,kgLoad:kgLoad,dec:dec};\n'+MK);
  const b=await chromium.launch();const p=await b.newPage();
  p.on('pageerror',e=>console.log('頁面錯誤',e.message));
