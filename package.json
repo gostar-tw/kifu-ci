@@ -1,0 +1,6 @@
+{
+  "name": "kifu-ci",
+  "private": true,
+  "description": "智多星 AI 小棋盤：GitHub Actions 自動分析",
+  "dependencies": { "playwright": "1.56.0" }
+}
