@@ -6,9 +6,13 @@ let PW;try{PW=require('playwright');}catch(e){PW=require('/opt/npm-tools/node_mo
 const [,,GF,OUT,SIDE0]=process.argv;const g=JSON.parse(fs.readFileSync(GF,'utf8'));
 const PAGE='https://www.gostar.tw/p/kifu.html';
 (async()=>{
- const html0=await (await fetch(PAGE+'?nc='+Date.now())).text();
  const MK='/* ---------- toolbar ---------- */';
- if(html0.indexOf(MK)<0) throw new Error('線上頁面找不到插入點');
+ let html0='';
+ for(let i=0;i<4;i++){ /* Blogger 偶爾回不完整的頁面：重抓幾次 */
+  try{html0=await (await fetch(PAGE+'?nc='+Date.now())).text();}catch(e){html0='';}
+  if(html0.indexOf(MK)>=0)break; await new Promise(r=>setTimeout(r,8000));
+ }
+ if(html0.indexOf(MK)<0) throw new Error('線上頁面找不到插入點（抓了 4 次，長度 '+html0.length+'）');
  const html=html0.replace(MK,'window.__t={S:function(){return S},build:build,aiEval:aiEval,kgLoad:kgLoad,dec:dec};\n'+MK);
  const b=await chromium.launch();const p=await b.newPage();
  p.on('pageerror',e=>console.log('頁面錯誤',e.message));
