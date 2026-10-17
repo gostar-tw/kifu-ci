@@ -68,7 +68,7 @@ async function collect() {
     try {
       let T; try { T = JSON.parse(it.talk); } catch (e) { throw new Error('talk.json 不是正確的 JSON：' + e.message); }
       if (!Array.isArray(T.seg) || !T.seg.length) throw new Error(T.reply ? 'Claude 寫不出來：' + T.reply : 'talk.json 沒有 seg');
-      T.seg.forEach(s => { if (!(Array.isArray(s) && s.length === 4 && s[0] >= 1 && s[1] >= s[0])) throw new Error('seg 格式不對：' + JSON.stringify(s)); });
+      T.seg.forEach(s => { if (!(Array.isArray(s) && s.length >= 4 && s.length <= 6 && s[0] >= 1 && s[1] >= s[0] && (s[4] == null || (Number.isInteger(s[4]) && s[4] >= 0)) && (s[5] == null || (Array.isArray(s[5]) && s[5].length <= 10 && s[5].every(x => /^[A-HJ-T](1[0-9]|[1-9])$/.test(x)))))) throw new Error('seg 格式不對：' + JSON.stringify(s)); });   // v4：[起,迄,標題,內文,跳到第幾手?,參考圖手順?]
       const g = await api({ action: 'exGet', g: it.g });
       if (!g.ana) throw new Error('後台找不到分析檔');
       const af = path.join(dir, 'ana.json'), hf = path.join(dir, 'page.html'), tf = path.join(dir, 'page-talk.json');
