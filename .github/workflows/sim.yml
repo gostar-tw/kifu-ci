@@ -1,0 +1,42 @@
+# 智多星 AI 小棋盤：AI 對 AI 模擬（調強度、棋風用）。手動或 Claude 觸發；10 台同時跑
+name: AI 模擬對局
+on:
+  workflow_dispatch:
+    inputs:
+      games:
+        description: '每台每組下幾盤'
+        default: '2'
+      set:
+        description: '用哪一組對局（sim/ 底下的檔名）'
+        default: 'm.json'
+      minutes:
+        description: '每台最多跑幾分鐘'
+        default: '300'
+concurrency:
+  group: kifu-sim-${{ github.event.inputs.set || 'm.json' }}
+  cancel-in-progress: false
+jobs:
+  sim:
+    runs-on: ubuntu-latest
+    timeout-minutes: 340
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [0,1,2,3,4,5,6,7,8,9]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: 模擬
+        run: |
+          mkdir -p out
+          G=${{ github.event.inputs.games || '2' }}
+          node sim/duel.js $G $(( ${{ matrix.shard }} * G )) sim/${{ github.event.inputs.set || 'm.json' }} out/s${{ matrix.shard }}.jsonl ${{ github.event.inputs.minutes || '300' }} || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: sim-${{ github.event.inputs.set || 'm.json' }}-${{ matrix.shard }}
+          path: out/
