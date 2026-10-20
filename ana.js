@@ -17,7 +17,20 @@ const PAGE='https://www.gostar.tw/p/kifu.html';
  if(html0.indexOf(MK)>=0){fs.mkdirSync(require('path').dirname(CACHE),{recursive:true});fs.writeFileSync(CACHE,html0);}
  else if(fs.existsSync(CACHE)){console.log('線上頁面抓不到（長度 '+html0.length+'），改用快取');html0=fs.readFileSync(CACHE,'utf8');}
  if(html0.indexOf(MK)<0) throw new Error('線上頁面找不到插入點，也沒有快取（長度 '+html0.length+'）：'+html0.replace(/\s+/g,' ').slice(0,160));
- const html=html0.replace(MK,'window.__t={S:function(){return S},build:build,aiEval:aiEval,kgLoad:kgLoad,dec:dec};\n'+MK);
+ /* 2026-10-20 形勢加勝率＋藍點：跟小棋盤一樣，用 value 頭算黑勝率；藍點＝直覺前 8 名各下一手、比勝率，取前 3 */
+const EV3=`async function(){var N=S.size,NN=N*N,pla=nextColor(),opp=pla===1?2:1,I=kgInput(),Enc=kgEncs[N]||(kgEncs[N]=KGEnc(N)),km=komiNow(),i;
+ var r=Enc.encode(I.setup,I.ev,km,pla);
+ var out=await kgExec(function(){return {input_binary:new window.ort.Tensor("float32",r.bin,[1,22,N,N]),input_global:new window.ort.Tensor("float32",r.glob,[1,19])};},"ana");
+ var v=out.output_value.data,e0=Math.exp(v[0]),e1=Math.exp(v[1]),pw=e0/(e0+e1),winB=r.pla===1?pw:1-pw;
+ var P=out.output_policy.data,b=build(),ord=[];for(i=0;i<NN;i++)ord.push(i);ord.sort(function(a,c){return P[c]-P[a];});
+ var cand=[];for(i=0;i<NN&&cand.length<8;i++){var q=ord[i],x=q%N;if(!b.grid[q]&&legal(b,x,(q-x)/N))cand.push(q);}
+ var bd=[];if(cand.length){var K=cand.length,bin=new Float32Array(K*22*NN),gl=new Float32Array(K*19);
+  cand.forEach(function(q,k){var e=Enc.encode(I.setup,I.ev.concat([{c:pla,p:q}]),km,opp);bin.set(e.bin,k*22*NN);gl.set(e.glob,k*19);});
+  var o=await kgExec(function(){return {input_binary:new window.ort.Tensor("float32",bin,[K,22,N,N]),input_global:new window.ort.Tensor("float32",gl,[K,19])};},"ana");
+  var w=o.output_value.data;for(var k=0;k<K;k++){var a0=Math.exp(w[k*3]),a1=Math.exp(w[k*3+1]);bd.push([cand[k],Math.round(a1/(a0+a1)*100)]);}
+  bd.sort(function(a,c){return c[1]-a[1];});bd=bd.slice(0,3);}
+ return {win:Math.round(winB*100),pla:pla,bd:bd};}`;
+const html=html0.replace(MK,'window.__t={S:function(){return S},build:build,aiEval:aiEval,kgLoad:kgLoad,dec:dec,ev3:'+EV3+'};\n'+MK);
  const b=await chromium.launch();const p=await b.newPage();
  p.on('pageerror',e=>console.log('頁面錯誤',e.message));
  await p.route('**/script.google.com/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{"ok":true}'}));
@@ -48,11 +61,12 @@ const PAGE='https://www.gostar.tw/p/kifu.html';
    R.push({n,c,own:A.ownB?Array.from(A.ownB).map(v=>Math.round(v*100)/100):null,lead0:Math.round(A.lead*10)/10,act,best,va:vals[act],vb:vals[best],cand:vals});
   }
   /* 2026-10-20 每一手的形勢（講評網頁的「🔵 形勢」開關用）：own 每點一個字母 a~u = -1~+1（黑正），lead 黑領先幾目 */
-  const OW=[],LD=[];
+  const OW=[],LD=[],WB=[],BD=[];
   for(let k=0;k<=M.length;k++){set(k);const E2=await K.aiEval();LD.push(Math.round(E2.lead*10)/10);
+   try{const W3=await K.ev3();WB.push(W3.win);BD.push(W3.bd);}catch(e){WB.push(null);BD.push([]);}
    OW.push(E2.ownB?Array.from(E2.ownB).map(v=>String.fromCharCode(97+Math.max(0,Math.min(20,Math.round(v*10)+10)))).join(''):'');}
   set(M.length);const E=await K.aiEval();
-  return {own:OW,leadAll:LD,size:N,mv:M.map(m=>[m.x,m.y]),col:M.map(m=>m.c),setup,ha:S.ha||0,km:S.km,rows:R,end:Math.round(E.lead*10)/10};},[g.code,side]);
+  return {own:OW,leadAll:LD,winAll:WB,bdAll:BD,size:N,mv:M.map(m=>[m.x,m.y]),col:M.map(m=>m.c),setup,ha:S.ha||0,km:S.km,rows:R,end:Math.round(E.lead*10)/10};},[g.code,side]);
  res.side=side;res.game=Object.assign({},g,{code:undefined});res.sec=Math.round((Date.now()-t0)/1000);
  fs.writeFileSync(OUT,JSON.stringify(res));
  console.log('分析完成',res.rows.length,'手，用了',res.sec,'秒');
