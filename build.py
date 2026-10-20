@@ -123,7 +123,7 @@ if g.get('ai'):
 me = pb if side == 'b' else pw if side == 'w' else '雙方'
 D = {'g': {'size': N, 'mv': A['mv'], 'col': A['col'], 'setup': A.get('setup') or {}, 'pb': pb, 'pw': pw,
            'dt': g.get('dt', ''), 're': g.get('re', '') or (('小朋友' + g['win']) if g.get('win') else '')},
-     'items': items, 'phases': phases, 'own': A.get('own') or [], 'lead': A.get('leadAll') or [], 'trend': trend, 'side': side, 'talk': TALK, 'gid': g.get('g', '')}
+     'items': items, 'phases': phases, 'own': A.get('own') or [], 'lead': A.get('leadAll') or [], 'win': A.get('winAll') or [], 'bd': A.get('bdAll') or [], 'trend': trend, 'side': side, 'talk': TALK, 'gid': g.get('g', '')}
 title = ('對局講評' if TALK else 'AI 分析') + '｜' + pb + ' vs ' + pw
 tpl = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'tpl.html'), encoding='utf-8').read()
 data = json.dumps(D, ensure_ascii=False).replace('</', '<\\/')
