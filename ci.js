@@ -96,11 +96,12 @@ async function dispatch() {
       if (g.ana) {
         A = JSON.parse(g.ana);
         /* 2026-10-20 舊的分析沒有每一手的形勢：重寫講評時順便重新分析一次，網頁才有「🔵 形勢」（講評文字照舊） */
-        if (!A.own && job.game) {
+        /* 2026-10-20 晚：沒有勝率／藍點（winAll）的舊分析也一樣，勾「重寫」就順便重新分析 */
+        if ((!A.own || !A.winAll) && job.game) {
           try {
             const r = await analyzeRetry(job, dir); A = JSON.parse(fs.readFileSync(r.af, 'utf8'));
             if (g.html && g.html.length > 200) await api({ action: 'exPut', kind: 'ana', g: job.g, html: g.html, ana: fs.readFileSync(r.af, 'utf8') });
-            console.log('… 舊分析補上形勢');
+            console.log('… 舊分析重新分析（補形勢／勝率／藍點）');
           } catch (e) { console.log('… 補形勢失敗，照舊分析寫：' + String(e.message).split('\n').pop()); A = JSON.parse(g.ana); }
         }
       }
