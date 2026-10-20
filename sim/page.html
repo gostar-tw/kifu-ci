@@ -6517,11 +6517,12 @@ function aiPick(A,P,humanPassed){
       var okq=function(q){ return rk[q]<P.sm; };
       tac={cap:tac.cap.filter(okq), atari:tac.atari.filter(okq), esc:tac.esc.filter(okq)};
     }
-    var CT = P.ct>0 ? aiOppLibs(b,c) : null;
+    var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null;
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
     else if(tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
+    else if(P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5; })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
     else if(Math.random()<P.err){
       AI_FX=1;
 
