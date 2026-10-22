@@ -6442,7 +6442,7 @@ function aiPick2(A,P,hp){
 function aiPick2a(A,P,hp){ return aiPick2b(A,P,hp).then(function(r){ return (P.kc>0||P.kf>0) ? aiStay(A,P,r) : r; }); }
 function aiStay(A,P,r){
   var N=S.size, c=nextColor(), sg=(c===1?1:-1), ms=S.moves.slice(0,S.cur), pm=ms.length?ms[ms.length-1]:null;
-  if(!pm || pm.x<0 || r[0]<0 || (r[1].tk && r[1].tk!=="x")) return Promise.resolve(r);
+  if(!pm || pm.x<0 || r[0]<0 || (r[1].tk && r[1].tk!=="x") || ms.length<(P.kT||0)) return Promise.resolve(r);
   var b=build(), g=b.grid, p0=pm.y*N+pm.x;
   function dist(q,x,y){ var qx=q%N; return Math.max(Math.abs(qx-x),Math.abs((q-qx)/N-y)); }
   var KR=P.kr||2; if(dist(r[0],pm.x,pm.y)<=KR) return Promise.resolve(r);
@@ -6571,9 +6571,10 @@ function aiPick(A,P,humanPassed){
     }
     if(tac && P.tl){ var lmv=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(mm.c!==c){ lmv=mm; break; } }   /* 照棋理：吃、叫吃只在對方上一手附近 3 路內（不在別處攻殺時突然跑去吃） */
       if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:tac.esc}; } }
-    var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null;
+    var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null;
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
+    else if(P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
     else if(tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
     else if(P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); })).length){
