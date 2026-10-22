@@ -6459,7 +6459,7 @@ function aiStay(A,P,r){
   var q=-1, tk="";
   var ol=Object.keys(oppL).map(Number);
   if(ol.length && Math.random()<(P.kc||0)){ q=best(function(z){ return oppL[z]; }); tk="k"; }
-  if(q<0 && run<(P.kL||6) && Math.random()<(P.kf||0)){ q=best(function(z){ return dist(z,pm.x,pm.y)<=KR; }); tk="k"; }
+  if(q<0 && run<(P.kL||6) && Math.random()<(P.kf||0)){ q=best(function(z){ return dist(z,pm.x,pm.y)<=KR; }); tk="l"; }
   if(q<0) return Promise.resolve(r);
   function val(z){ var x=z%N; S.moves.splice(S.cur,0,{x:x,y:(z-x)/N,c:c}); S.cur++;
     return aiEval().then(function(E){ S.cur--; S.moves.splice(S.cur,1); return sg*E.lead; }, function(e){ S.cur--; S.moves.splice(S.cur,1); throw e; }); }
