@@ -2,3 +2,4 @@ node_modules/
 work/
 tpl.html
 __pycache__/
+sim/page-live.html
