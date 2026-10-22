@@ -6569,6 +6569,8 @@ function aiPick(A,P,humanPassed){
       var okq=function(q){ return rk[q]<P.sm; };
       tac={cap:tac.cap.filter(okq), atari:tac.atari.filter(okq), esc:tac.esc.filter(okq)};
     }
+    if(tac && P.tl){ var lmv=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(mm.c!==c){ lmv=mm; break; } }   /* 照棋理：吃、叫吃只在對方上一手附近 3 路內（不在別處攻殺時突然跑去吃） */
+      if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:tac.esc}; } }
     var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null;
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
