@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
