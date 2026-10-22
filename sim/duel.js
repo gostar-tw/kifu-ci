@@ -15,7 +15,7 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
   const mk=s=>{const P=K.aiPrmG({lv:s.lv,sz:s.psz||N,boss:!!s.boss});Object.assign(P,s.ov||{});Object.keys(P).forEach(k=>{if(k.length>1&&k.endsWith('x')&&typeof P[k.slice(0,-1)]==='number'){P[k.slice(0,-1)]*=P[k];delete P[k];}});return P;};
   const PA=mk(m.A),PB=mk(m.B);const aBlack=g%2===0;
   S.size=N;S.moves=[];S.cur=0;S.setup={};S.extra={};S.tryMoves=[];S.ha=0;S.km=null;let passes=0;const o=[];
-  for(let t=0;t<(m.T||N*N*1.6);t++){const A=await K.aiEval();const c=K.nextColor();const isA=(c===1)===aBlack;const sp=isA?m.A:m.B,P=sp.full?K.aiPrmG({lv:20,sz:19}):(isA?PA:PB);let q,fx=0,tk='',sy=0;
+  for(let t=0;t<(m.T||Math.round(N*N*1.25));t++){const A=await K.aiEval();const c=K.nextColor();const isA=(c===1)===aBlack;const sp=isA?m.A:m.B,P=sp.full?K.aiPrmG({lv:20,sz:19}):(isA?PA:PB);let q,fx=0,tk='',sy=0;
    if(sp.boss){K.fx0&&K.fx0();const rr=await K.aiPick2(A,P,passes>0);q=rr[0];fx=rr[1].fx;tk=rr[1].tk;sy=(!fx&&!tk&&K.fx()[2]===q)?1:0;}
    else{q=K.aiPick(A,P,passes>0);const f=K.fx();fx=f[0];tk=f[1];sy=(!fx&&!tk&&f[2]===q)?1:0;}
    if(q<0){S.moves.push({x:-1,y:-1,c});o.push(-1);passes++;S.cur=S.moves.length;if(passes>=2)break;}
