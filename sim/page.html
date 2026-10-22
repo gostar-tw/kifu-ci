@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK]}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6290,7 +6290,7 @@ function aiOppLibs(b,c){
   }
   return out;
 }
-var AI_FX=0, AI_TK="";
+var AI_FX=0, AI_TK="", AI_SYQ=-1;
 
 var NW19=true;
 var NEWS=!NW19 ? {id:"2026-10-17p", d:"10/17", items:[
@@ -6539,7 +6539,7 @@ function aiSty(q,P,b,c,early){
 }
 var AI_CUT=null;
 function aiPick(A,P,humanPassed){
-    AI_FX=0; AI_TK=""; AI_OWN=A.ownB||null; AI_CUT=null;
+    AI_FX=0; AI_TK=""; AI_SYQ=-1; AI_OWN=A.ownB||null; AI_CUT=null;
     var N=S.size, b=build(), c=nextColor(), cand=[], i, mx=-1e9;
     for(i=0;i<N*N;i++) if(A.pol[i]>mx) mx=A.pol[i];
     if(A.pass>mx) mx=A.pass;
@@ -6591,6 +6591,8 @@ function aiPick(A,P,humanPassed){
       r2=Math.random()*sw;
       for(i=0;i<w.length;i++){ r2-=w[i]; if(r2<=0) break; }
       move=cand[Math.min(i,cand.length-1)].q;
+      if(P.sty){ var ix=Math.min(i,cand.length-1), w0=cand.map(function(o){ var f=1; if(CT && CT[o.q]!=null){ var lb=CT[o.q]; f=1+P.ct*(lb<=2?8:lb===3?4:2); } return Math.pow(o.p,1/P.tmp)*f*(early && edge(o.q) ? 0.05 : 1); }), s0=0;
+        w0.forEach(function(v){ s0+=v; }); if(s0>0 && w0[ix]>0 && (w[ix]/sw)/(w0[ix]/s0)>=2) AI_SYQ=move; }   /* 個性手：棋風讓這手的機會變成 2 倍以上 */
     }
     return move;
 }
