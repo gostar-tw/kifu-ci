@@ -6596,7 +6596,8 @@ function aiPick(A,P,humanPassed){
       r2=Math.random()*sw;
       for(i=0;i<w.length;i++){ r2-=w[i]; if(r2<=0) break; }
       move=cand[Math.min(i,cand.length-1)].q;
-      if(P.sty){ var ix=Math.min(i,cand.length-1), w0=cand.map(function(o){ var f=1; if(CT && CT[o.q]!=null){ var lb=CT[o.q]; f=1+P.ct*(lb<=2?8:lb===3?4:2); } return Math.pow(o.p,1/P.tmp)*f*(early && edge(o.q) ? 0.05 : 1); }), s0=0;
+      if(S.moves.length>=N*N*0.6 && A.ownB && Math.abs(A.ownB[move])>=0.85) move=-1;   /* 收官後段：下在已經確定是誰的地方（送進去被吃、填自己的地）就改成虛手 */
+      if(move>=0 && P.sty){ var ix=Math.min(i,cand.length-1), w0=cand.map(function(o){ var f=1; if(CT && CT[o.q]!=null){ var lb=CT[o.q]; f=1+P.ct*(lb<=2?8:lb===3?4:2); } return Math.pow(o.p,1/P.tmp)*f*(early && edge(o.q) ? 0.05 : 1); }), s0=0;
         w0.forEach(function(v){ s0+=v; }); if(s0>0 && w0[ix]>0 && (w[ix]/sw)/(w0[ix]/s0)>=2) AI_SYQ=move; }   /* 個性手：棋風讓這手的機會變成 2 倍以上 */
     }
     return move;
