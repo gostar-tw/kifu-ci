@@ -6386,6 +6386,7 @@ function aiAfter(g,N,q,c){
 
 function aiLate(){ return S.cur >= Math.round(0.55*S.size*S.size); }
 function aiPick2(A,P,hp){
+  if(P.ph){ var P0=P; P={}; for(var k0 in P0) P[k0]=P0[k0]; P0.ph.forEach(function(r){ if(S.moves.length>=r[0] && S.moves.length<r[1]){ P.k=r[2]; P.btmp=r[3]; } }); }   /* 強度曲線：不同手數用不同的「挑幾手／隨意度」 */
   if(P.lcl==null || !aiLate()) return aiPick2a(A,P,hp);
   var P3={}, k; for(k in P) P3[k]=P[k]; P3.err=0;
   var N=S.size, c=nextColor(), sg=(c===1?1:-1), b=build(), ord=[], i;
