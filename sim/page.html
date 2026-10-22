@@ -6435,7 +6435,39 @@ function aiPick2(A,P,hp){
   });
 }
 
-function aiPick2a(A,P,hp){ return aiPick2a0(A,P,hp).then(function(r){
+/* 2026-10-22 戀戰／追殺：局部還在打（附近有兩、三口氣的棋），AI 想跑去別處時，有機率留下來繼續打。
+   kc：附近有「對方」兩、三口氣的棋 -> 追殺（下在那塊棋的氣上，挑 AI 直覺最高的）
+   kf：附近有任一方兩、三口氣的棋，局部連下未滿 kL 手 -> 戀戰（局部 2 路內挑 AI 直覺最高的）
+   kl：留下來那手比 AI 原本想下的虧超過 kl 目就不硬留 */
+function aiPick2a(A,P,hp){ return aiPick2b(A,P,hp).then(function(r){ return (P.kc>0||P.kf>0) ? aiStay(A,P,r) : r; }); }
+function aiStay(A,P,r){
+  var N=S.size, c=nextColor(), sg=(c===1?1:-1), ms=S.moves.slice(0,S.cur), pm=ms.length?ms[ms.length-1]:null;
+  if(!pm || pm.x<0 || r[0]<0 || (r[1].tk && r[1].tk!=="x")) return Promise.resolve(r);
+  var b=build(), g=b.grid, p0=pm.y*N+pm.x;
+  function dist(q,x,y){ var qx=q%N; return Math.max(Math.abs(qx-x),Math.abs((q-qx)/N-y)); }
+  if(dist(r[0],pm.x,pm.y)<=2) return Promise.resolve(r);
+  var run=0; for(var i=ms.length-1;i>0;i--){ var m1=ms[i], m0=ms[i-1]; if(m1.x<0||m0.x<0||Math.max(Math.abs(m1.x-m0.x),Math.abs(m1.y-m0.y))>2) break; run++; }
+  var seen={}, oppL={}, anyW=false, i2;
+  for(i2=0;i2<N*N;i2++){ if(!g[i2] || seen[i2] || dist(i2,pm.x,pm.y)>2) continue;
+    var col=g[i2], st=[i2], libs={}, nl=0; seen[i2]=1;
+    while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a2=ux+d[0], e2=uy+d[1]; if(a2<0||e2<0||a2>=N||e2>=N) return; var v=e2*N+a2;
+      if(!g[v]){ if(!libs[v]){ libs[v]=1; nl++; } } else if(g[v]===col && !seen[v]){ seen[v]=1; st.push(v); } }); }
+    if(nl>=2 && nl<=3){ anyW=true; if(col===3-c) for(var L in libs) oppL[L]=1; } }
+  if(!anyW) return Promise.resolve(r);
+  function ok(q){ var x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; var rr=aiAfter(g,N,q,c); return rr && (rr.cap || rr.libs>=2); }
+  function best(f){ var bq=-1, bp=-1e9; for(var q=0;q<N*N;q++){ if(f(q) && ok(q) && A.pol[q]>bp){ bp=A.pol[q]; bq=q; } } return bq; }
+  var q=-1, tk="";
+  var ol=Object.keys(oppL).map(Number);
+  if(ol.length && Math.random()<(P.kc||0)){ q=best(function(z){ return oppL[z]; }); tk="k"; }
+  if(q<0 && run<(P.kL||6) && Math.random()<(P.kf||0)){ q=best(function(z){ return dist(z,pm.x,pm.y)<=2; }); tk="k"; }
+  if(q<0) return Promise.resolve(r);
+  function val(z){ var x=z%N; S.moves.splice(S.cur,0,{x:x,y:(z-x)/N,c:c}); S.cur++;
+    return aiEval().then(function(E){ S.cur--; S.moves.splice(S.cur,1); return sg*E.lead; }, function(e){ S.cur--; S.moves.splice(S.cur,1); throw e; }); }
+  var vr; return val(r[0]).then(function(v){ vr=v; return val(q); }).then(function(vq){
+    if(vr-vq>(P.kl!=null?P.kl:8)) return r;
+    return [q,{fx:0,tk:tk}]; }).catch(function(){ return r; });
+}
+function aiPick2b(A,P,hp){ return aiPick2a0(A,P,hp).then(function(r){
   if(!r[1].tk || P.tkl==null || r[0]<0) return r;
   var N=S.size, c=nextColor(), sg=(c===1?1:-1), b=build(), best=-1, mx=-1e9, i;
   for(i=0;i<N*N;i++){ var x=i%N; if(!b.grid[i] && A.pol[i]>mx && legal(b,x,(i-x)/N) && !aiOwnEye(b.grid,x,(i-x)/N,c)){ mx=A.pol[i]; best=i; } }
