@@ -6445,10 +6445,10 @@ function aiStay(A,P,r){
   if(!pm || pm.x<0 || r[0]<0 || (r[1].tk && r[1].tk!=="x")) return Promise.resolve(r);
   var b=build(), g=b.grid, p0=pm.y*N+pm.x;
   function dist(q,x,y){ var qx=q%N; return Math.max(Math.abs(qx-x),Math.abs((q-qx)/N-y)); }
-  if(dist(r[0],pm.x,pm.y)<=2) return Promise.resolve(r);
+  var KR=P.kr||2; if(dist(r[0],pm.x,pm.y)<=KR) return Promise.resolve(r);
   var run=0; for(var i=ms.length-1;i>0;i--){ var m1=ms[i], m0=ms[i-1]; if(m1.x<0||m0.x<0||Math.max(Math.abs(m1.x-m0.x),Math.abs(m1.y-m0.y))>2) break; run++; }
   var seen={}, oppL={}, anyW=false, i2;
-  for(i2=0;i2<N*N;i2++){ if(!g[i2] || seen[i2] || dist(i2,pm.x,pm.y)>2) continue;
+  for(i2=0;i2<N*N;i2++){ if(!g[i2] || seen[i2] || dist(i2,pm.x,pm.y)>KR) continue;
     var col=g[i2], st=[i2], libs={}, nl=0; seen[i2]=1;
     while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a2=ux+d[0], e2=uy+d[1]; if(a2<0||e2<0||a2>=N||e2>=N) return; var v=e2*N+a2;
       if(!g[v]){ if(!libs[v]){ libs[v]=1; nl++; } } else if(g[v]===col && !seen[v]){ seen[v]=1; st.push(v); } }); }
@@ -6459,7 +6459,7 @@ function aiStay(A,P,r){
   var q=-1, tk="";
   var ol=Object.keys(oppL).map(Number);
   if(ol.length && Math.random()<(P.kc||0)){ q=best(function(z){ return oppL[z]; }); tk="k"; }
-  if(q<0 && run<(P.kL||6) && Math.random()<(P.kf||0)){ q=best(function(z){ return dist(z,pm.x,pm.y)<=2; }); tk="k"; }
+  if(q<0 && run<(P.kL||6) && Math.random()<(P.kf||0)){ q=best(function(z){ return dist(z,pm.x,pm.y)<=KR; }); tk="k"; }
   if(q<0) return Promise.resolve(r);
   function val(z){ var x=z%N; S.moves.splice(S.cur,0,{x:x,y:(z-x)/N,c:c}); S.cur++;
     return aiEval().then(function(E){ S.cur--; S.moves.splice(S.cur,1); return sg*E.lead; }, function(e){ S.cur--; S.moves.splice(S.cur,1); throw e; }); }
