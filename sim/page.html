@@ -6534,6 +6534,7 @@ function aiSty(q,P,b,c,early){
     if(P.tch>0){ if(na) f*=1+P.tch*na; } else if(na) f/=1+(-P.tch)*na; }
   if(P.sh && AI_OWN){ var om=(c===1?1:-1)*AI_OWN[q]; if(om<0) f/=1+P.sh*(-om); }   /* 怕怕病：對方的勢力範圍裡不太敢下（不敢去包圍） */
   if(P.cn){ if(!AI_CUT) AI_CUT=aiCut(b,c); if(AI_CUT.indexOf(q)>=0) f*=1+P.cn; }   /* 怕怕病：補斷點的點加權 */
+  if(P.cont){ var ms2=S.moves.slice(0,S.cur), nn=0; for(var i2=ms2.length-1;i2>=0 && nn<2;i2--){ var m2=ms2[i2]; if(m2.x<0) continue; nn++; if(Math.max(Math.abs(m2.x-x),Math.abs(m2.y-y))<=3){ f*=1+P.cont; break; } } }   /* 連貫：不要東一手西一手 */
   if(P.nr){ var ms=S.moves.slice(0,S.cur); for(var i=ms.length-1;i>=0;i--){ var m=ms[i]; if(m.c!==c){ if(m.x>=0 && Math.max(Math.abs(m.x-x),Math.abs(m.y-y))<=2) f*=1+P.nr; break; } } }
   return f;
 }
@@ -6575,9 +6576,9 @@ function aiPick(A,P,humanPassed){
     var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null;
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
+    else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
     else if(P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
     else if(tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
-    else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
     else if(P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); })).length){
       CUTQ.sort(function(a,z){ return A.pol[z]-A.pol[a]; }); move=CUTQ[0]; AI_TK="p"; }   /* 怕怕病：沒事先補自己的斷點（挑 AI 直覺最高的那個） */
     else if(P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5; })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
