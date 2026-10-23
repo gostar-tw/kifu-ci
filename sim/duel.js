@@ -18,6 +18,7 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
   for(let t=0;t<(m.T||Math.round(N*N*1.25));t++){const A=await K.aiEval();const c=K.nextColor();const isA=(c===1)===aBlack;const sp=isA?m.A:m.B,P=sp.full?K.aiPrmG({lv:20,sz:19}):(isA?PA:PB);let q,fx=0,tk='',sy=0;
    if(sp.boss){K.fx0&&K.fx0();const rr=await K.aiPick2(A,P,passes>0);q=rr[0];fx=rr[1].fx;tk=rr[1].tk;sy=(!fx&&!tk&&K.fx()[2]===q)?1:0;}
    else{q=K.aiPick(A,P,passes>0);const f=K.fx();fx=f[0];tk=f[1];sy=(!fx&&!tk&&f[2]===q)?1:0;}
+   {const T=(isA?sp:m.B).svT||(m.svT||0);if(T>0){const q1=await K.aiSaveFix(q,T);if(q1!==q){q=q1;fx=0;tk='sv';sy=0;}}}
    {const q2=K.aiEndFix(A,q);if(q2!==q){q=q2;fx=0;tk='';sy=0;}}
    if(!m.noko){const q3=await (m.one?K.aiOneFix(q):K.aiKoFix(q));if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
    if(q>=0){const x=q%N;S.moves.push({x,y:(q-x)/N,c});S.cur=S.moves.length;const hk=Array.prototype.join.call(K.build().grid,'');S.moves.pop();S.cur=S.moves.length;if(seen.has(hk)){q=-1;fx=0;tk='';sy=0;}}   // 全局同形：會回到之前出現過的盤面就虛手

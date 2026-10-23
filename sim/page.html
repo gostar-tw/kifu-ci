@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,sv:function(){return AI_SV},ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6574,6 +6574,27 @@ function aiKoFix(q){
     AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
 }
 var AI_KO=null;
+/* 2026-10-23 要子判斷：自己有棋被叫吃、還活著、逃得出去 -> 用形勢判斷算「救」跟「AI 原本那手」差幾目，
+   差 T 目以上就一定救（不管規則手、放水）；差不多（不重要的子）就照原本，保留小朋友會犯的錯 */
+function aiSaveFix(q,T){
+  var N=S.size; if(N!==19 || !(T>0)) return Promise.resolve(q);
+  var c=nextColor(), b=build(), g=b.grid, sg=(c===1?1:-1), seen={}, SV=[], i;
+  for(i=0;i<N*N;i++){ if(g[i]!==c || seen[i]) continue; var st=[i], ss=[], L={}, nl=0, lib=-1; seen[i]=1;
+    while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ if(!L[v]){ L[v]=1; nl++; lib=v; } } else if(g[v]===c && !seen[v]){ seen[v]=1; st.push(v); } }); }
+    if(nl!==1) continue; var lx=lib%N, ly=(lib-lx)/N; if(!legal(b,lx,ly)) continue;
+    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2) SV.push({p:lib, n:ss.length}); }
+  if(!SV.length || SV.some(function(o){ return o.p===q; })) return Promise.resolve(q);
+  SV.sort(function(a,z){ return z.n-a.n; }); SV=SV.slice(0,2);
+  var save=S.moves, cur=S.cur, L={};
+  function leadAfter(p){ var pr; if(p<0){ S.moves=save.slice(0,cur).concat([{x:-1,y:-1,c:c}]); } else { var x=p%N; S.moves=save.slice(0,cur).concat([{x:x,y:(p-x)/N,c:c}]); } S.cur=cur+1;
+    try{ pr=aiEval(); } finally { S.moves=save; S.cur=cur; } return pr.then(function(E){ return E.lead*sg; }); }
+  var ch=leadAfter(q).then(function(v){ L.q=v; });
+  SV.forEach(function(o){ ch=ch.then(function(){ return leadAfter(o.p).then(function(v){ o.v=v; }); }); });
+  return ch.then(function(){ var b2=null; SV.forEach(function(o){ if(!b2 || o.v>b2.v) b2=o; });
+    AI_SV=[q,b2.p,Math.round((b2.v-L.q)*10)/10]; return (b2.v-L.q>=T) ? b2.p : q; }).catch(function(){ return q; });
+}
+var AI_SV=null;
 /* 2026-10-23 收官「一顆」（19 路，第 217 手以後）：盤上有被叫吃的單顆子（我的、對方的都算）時，
    候選＝AI 原本想下的、提對方那顆、救自己那顆（粘劫也是這個），每手都用形勢判斷算目數，
    最多的那手；差不到 0.5 目就照「救自己 > 原本 > 提對方」 */
