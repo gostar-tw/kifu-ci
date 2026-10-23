@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,sv:function(){return AI_SV},ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,aiPickV:aiPickV,vv:function(){return AI_V},sv:function(){return AI_SV},ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6575,6 +6575,38 @@ function aiKoFix(q){
     AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
 }
 var AI_KO=null;
+/* 2026-10-23 高段新挑法 aiPickV：AI 直覺前 5 名都算目數，只在「比最好的一手虧不到 X 目」的手裡挑（照直覺機率，加上棋風偏好）。
+   X：全面 vx；中盤高手 打架 vxF／平靜 vx；官子大師 盤面確定前 vx／確定後 vxL；浪漫派 偏好四線以上、緊對方氣的手 */
+function aiPickV(A,P,hp){
+  var N=S.size, c=nextColor(), sg=(c===1?1:-1), b=build(), g=b.grid, i;
+  AI_FX=0; AI_TK=""; AI_SYQ=-1;
+  var U=aiUrg(b,c); if(U && !(U[1]==="c" && aiCapDead(b,c,A,U[0]))){ AI_TK=U[1]; return Promise.resolve(U[0]); }
+  var order=[]; for(i=0;i<N*N;i++) order.push(i); order.sort(function(a,z){ return A.pol[z]-A.pol[a]; });
+  var C=[]; for(i=0;i<order.length && C.length<(P.vn||5);i++){ var q=order[i], x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) continue; C.push(q); }
+  if(!C.length) return Promise.resolve(-1);
+  var late=S.moves.length>=Math.round(0.55*N*N);
+  if(late && (A.pass>=A.pol[C[0]] || hp && A.pass>A.pol[C[0]]-1.5)) return Promise.resolve(-1);
+  var ms=S.moves.slice(0,S.cur), lm=null; for(i=ms.length-1;i>=0;i--){ if(ms[i].c!==c){ lm=ms[i]; break; } }
+  var X=P.vx!=null?P.vx:1, mode="";
+  if(P.vxF!=null && lm && lm.x>=0){ var L1=aiOppLibs(b,c), L2=aiOppLibs(b,3-c), fight=false;
+    for(i=0;i<N*N && !fight;i++){ var ix=i%N, iy=(i-ix)/N; if(Math.max(Math.abs(ix-lm.x),Math.abs(iy-lm.y))>3) continue; if((L1[i]!=null&&L1[i]<=3)||(L2[i]!=null&&L2[i]<=3)) fight=true; }
+    if(fight){ X=P.vxF; mode="F"; } }
+  if(P.vxL!=null){ var st=0; for(i=0;i<N*N;i++) if(gkAbs(A.ownB[i])>=0.8) st++; if(st/(N*N)>=(P.vst||0.7)){ X=P.vxL; mode="L"; } }
+  var save=S.moves, cur=S.cur, V={}, ch=Promise.resolve();
+  function leadAfter(p){ var x=p%N, pr; S.moves=save.slice(0,cur).concat([{x:x,y:(p-x)/N,c:c}]); S.cur=cur+1; try{ pr=aiEval(); } finally { S.moves=save; S.cur=cur; } return pr.then(function(E){ return E.lead*sg; }); }
+  C.forEach(function(p){ ch=ch.then(function(){ return leadAfter(p).then(function(v){ V[p]=v; }); }); });
+  return ch.then(function(){
+    var vb=-1e9, best=C[0]; C.forEach(function(p){ if(V[p]>vb){ vb=V[p]; best=p; } });
+    var ok=C.filter(function(p){ return V[p]>=vb-X; });
+    var oppL=P.vrom ? aiOppLibs(b,c) : null;
+    var mx=A.pol[C[0]], W=ok.map(function(p){ var w=Math.exp((A.pol[p]-mx)/(P.vt||1)); if(P.vrom){ var x=p%N, y=(p-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; if(ln>=4) w*=1+P.vrom; if(oppL[p]!=null && oppL[p]<=3) w*=1+P.vrom; } return w; });
+    var tot=W.reduce(function(a,z){ return a+z; },0), r=Math.random()*tot, pick=ok[0];
+    for(i=0;i<ok.length;i++){ r-=W[i]; if(r<=0){ pick=ok[i]; break; } }
+    if(pick!==best) AI_SYQ=pick;
+    AI_V=[mode,X,Math.round((vb-V[pick])*10)/10]; return pick; })
+   .catch(function(){ return C[0]; });
+}
+var AI_V=null;
 /* 2026-10-23 實利派「不主動開戰」：(1) 扳、長都是好點時選長（碰對方的子比較少的那手）；
    (2) 對方上一手附近都安定（沒有 2 口氣以下的棋、形勢判斷都很確定）就手拔去搶空 */
 function aiCalm(A,q,P){
