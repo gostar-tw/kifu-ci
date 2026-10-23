@@ -6753,6 +6753,8 @@ function aiPick(A,P,humanPassed){
       if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:(N===19?tac.esc.filter(nearL):tac.esc)}; } }
     var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null, URG=null;
     var HANG = (N===19 && A.ownB && !P.nohang) ? aiHang(b,c,A) : false;
+    var LOC2=S.moves.slice(Math.max(0,S.cur-2),S.cur).filter(function(m){ return m.x>=0; });   /* 2026-10-23 補斷點、偷吃只在最近兩手附近 3 路內（不東一手西一手） */
+    var nearLL=function(q){ if(N!==19 || !LOC2.length) return true; var qx=q%N, qy=(q-qx)/N; return LOC2.some(function(m){ return Math.max(Math.abs(qx-m.x),Math.abs(qy-m.y))<=3; }); };
     if(tac && N===19 && A.ownB && !P.nohang) tac.cap=tac.cap.filter(function(q){ return !aiCapDead(b,c,A,q); });
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
     else if(P.urg!==0 && (URG=aiUrg(b,c)) && !(URG[1]==="c" && A.ownB && !P.nohang && aiCapDead(b,c,A,URG[0]))){ move=URG[0]; AI_TK=URG[1]; }   /* 緊急手：該提的一定提、大塊被叫吃要救 */
@@ -6760,9 +6762,9 @@ function aiPick(A,P,humanPassed){
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
     else if(!HANG && P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
     else if(!HANG && tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
-    else if(!HANG && P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); })).length){
+    else if(!HANG && P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2) && nearLL(q); })).length){
       CUTQ.sort(function(a,z){ return A.pol[z]-A.pol[a]; }); move=CUTQ[0]; AI_TK="p"; }   /* 怕怕病：沒事先補自己的斷點（挑 AI 直覺最高的那個） */
-    else if(!HANG && P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5; })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
+    else if(!HANG && P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5 && nearLL(q); })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
     else if(Math.random()<P.err){
       AI_FX=1;
 
