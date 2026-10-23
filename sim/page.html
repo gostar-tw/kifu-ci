@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6554,6 +6554,25 @@ function aiEndFix(A,q){
   var bq=-1, bp=-1e9, z; for(z=0;z<N*N;z++){ var x=z%N, y=(z-x)/N; if(g[z] || A.pol[z]<=bp || !legal(b,x,y) || aiOwnEye(g,x,y,c) || bad(z)) continue; bp=A.pol[z]; bq=z; }
   return (bq<0 || A.pass>bp) ? -1 : bq;
 }
+/* 2026-10-23 收官打劫（19 路，第 217 手以後）：要提劫時，跟「粘掉另一個劫」比目數（AI 形勢判斷），
+   目數一樣（差不到 0.5 目）就粘劫，不再無限輪流提 */
+function aiKoFix(q){
+  var N=S.size; if(N!==19 || q<0 || S.moves.length<Math.round(0.6*N*N)) return Promise.resolve(q);
+  var c=nextColor(), b=build(), g=b.grid, r=aiAfter(g,N,q,c), sg=(c===1?1:-1), F=[], z;
+  if(!r || r.cap!==1 || r.libs!==1) return Promise.resolve(q);
+  for(z=0;z<N*N && F.length<3;z++){ if(g[z] || z===q) continue; var x=z%N, y=(z-x)/N; if(!legal(b,x,y)) continue;
+    var o=aiAfter(g,N,z,3-c); if(!o || o.cap!==1 || o.libs!==1) continue;      /* 對方下這裡＝提我一子成劫 -> 我下這裡就是粘劫 */
+    var m=aiAfter(g,N,z,c); if(m && m.libs>=2) F.push(z); }
+  if(!F.length) return Promise.resolve(q);
+  var save=S.moves, cur=S.cur;
+  function leadAfter(p){ var x=p%N; S.moves=save.slice(0,cur).concat([{x:x,y:(p-x)/N,c:c}]); S.cur=cur+1;
+    return aiEval().then(function(E){ S.moves=save; S.cur=cur; return E.lead*sg; }, function(e){ S.moves=save; S.cur=cur; throw e; }); }
+  var L={}, ch=Promise.resolve();
+  [q].concat(F).forEach(function(p){ ch=ch.then(function(){ return leadAfter(p).then(function(v){ L[p]=v; }); }); });
+  return ch.then(function(){ var best=-1, bv=-1e9; F.forEach(function(p){ if(L[p]>bv){ bv=L[p]; best=p; } });
+    AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
+}
+var AI_KO=null;
 /* 2026-10-23 緊急手（所有 AI）：互相攻殺剩一口氣時不能不管。
    1. 能提對方 2 子以上，或提掉的子就貼著自己剩一口氣的棋 -> 一定提（挑提最多的）
    2. 自己 3 子以上被叫吃、提不到也能逃出去（逃完 2 口氣以上） -> 逃 */

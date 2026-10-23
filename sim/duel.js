@@ -19,6 +19,7 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
    if(sp.boss){K.fx0&&K.fx0();const rr=await K.aiPick2(A,P,passes>0);q=rr[0];fx=rr[1].fx;tk=rr[1].tk;sy=(!fx&&!tk&&K.fx()[2]===q)?1:0;}
    else{q=K.aiPick(A,P,passes>0);const f=K.fx();fx=f[0];tk=f[1];sy=(!fx&&!tk&&f[2]===q)?1:0;}
    {const q2=K.aiEndFix(A,q);if(q2!==q){q=q2;fx=0;tk='';sy=0;}}
+   if(!m.noko){const q3=await K.aiKoFix(q);if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
    if(q>=0){const x=q%N;S.moves.push({x,y:(q-x)/N,c});S.cur=S.moves.length;const hk=Array.prototype.join.call(K.build().grid,'');S.moves.pop();S.cur=S.moves.length;if(seen.has(hk)){q=-1;fx=0;tk='';sy=0;}}   // 全局同形：會回到之前出現過的盤面就虛手
    if(q<0){S.moves.push({x:-1,y:-1,c});o.push(-1);passes++;S.cur=S.moves.length;if(passes>=2)break;}
    else{passes=0;const x=q%N;S.moves.push({x,y:(q-x)/N,c});o.push([x,(q-x)/N,fx,tk,sy]);S.cur=S.moves.length;seen.add(Array.prototype.join.call(K.build().grid,''));}}
