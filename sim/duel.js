@@ -8,7 +8,7 @@ await p.route('**/script.google.com/**',r=>r.fulfill({status:200,contentType:'ap
 await p.route(/google-analytics|googletagmanager/,r=>r.abort());
 
 await p.addInitScript(()=>{localStorage.setItem('gk_lang','zh');localStorage.setItem('gk_news','x');});
-await p.goto('file://'+__dirname+'/page.html?ai=1');await p.waitForTimeout(1500);
+await p.goto('file://'+__dirname+'/'+(ms[0].page||'page.html')+'?ai=1');await p.waitForTimeout(1500);
 await p.evaluate(()=>window.__t.kgLoad());
 for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if(Date.now()>TEND){console.log('時間到');await b.close();return;}
  const r=await p.evaluate(async([g,m])=>{const K=window.__t,S=K.S(),N=m.N;
