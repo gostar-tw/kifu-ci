@@ -6444,6 +6444,7 @@ function aiPick2a(A,P,hp){ return aiPick2b(A,P,hp).then(function(r){ return (P.k
 function aiStay(A,P,r){
   var N=S.size, c=nextColor(), sg=(c===1?1:-1), ms=S.moves.slice(0,S.cur), pm=ms.length?ms[ms.length-1]:null;
   if(!pm || pm.x<0 || r[0]<0 || (r[1].tk && r[1].tk!=="x") || ms.length<(P.kT||0)) return Promise.resolve(r);
+  if(A.ownB && !P.nohang && aiHang(build(),nextColor(),A)) return Promise.resolve(r);
   var b=build(), g=b.grid, p0=pm.y*N+pm.x;
   function dist(q,x,y){ var qx=q%N; return Math.max(Math.abs(qx-x),Math.abs((q-qx)/N-y)); }
   var KR=P.kr||2; if(dist(r[0],pm.x,pm.y)<=KR) return Promise.resolve(r);
@@ -6617,6 +6618,26 @@ function aiUrg(b,c){
     var r=aiAfter(g,N,q,c); if(r && r.libs>=2 && o.s.length>bn){ bn=o.s.length; best=q; } });
   return best>=0 ? [best,"s"] : null;
 }
+/* 2026-10-23 (19x19) no brainless side-rules: an own group in atari that is still alive and can escape -> skip side rules */
+function aiHang(b,c,A){
+  var N=S.size, g=b.grid, sg=(c===1?1:-1), seen={}, i;
+  for(i=0;i<N*N;i++){ if(g[i]!==c || seen[i]) continue; var st=[i], ss=[], L={}, nl=0, lib=-1; seen[i]=1;
+    while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ if(!L[v]){ L[v]=1; nl++; lib=v; } } else if(g[v]===c && !seen[v]){ seen[v]=1; st.push(v); } }); }
+    if(nl!==1) continue;
+    var own=0; ss.forEach(function(s2){ own+=sg*A.ownB[s2]; }); own/=ss.length; if(own<-0.6) continue;
+    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2) return true; }
+  return false;
+}
+/* stones that q would capture are already dead (AI ownership says ours) -> not worth a rule capture */
+function aiCapDead(b,c,A,q){
+  var N=S.size, g=b.grid, sg=(c===1?1:-1), x=q%N, y=(q-x)/N, tot=0, n=0, seen={};
+  [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(g[v]!==3-c || seen[v]) return;
+    var st=[v], ss=[], nl=0, L={}; seen[v]=1;
+    while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u); [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d2){ var a2=ux+d2[0], e2=uy+d2[1]; if(a2<0||e2<0||a2>=N||e2>=N) return; var w=e2*N+a2; if(!g[w]){ if(!L[w]){ L[w]=1; nl++; } } else if(g[w]===3-c && !seen[w]){ seen[w]=1; st.push(w); } }); }
+    if(nl===1) ss.forEach(function(s2){ tot+=sg*A.ownB[s2]; n++; }); });
+  return n>0 && tot/n>=0.8;
+}
 function aiPick(A,P,humanPassed){
     AI_FX=0; AI_TK=""; AI_SYQ=-1; AI_OWN=A.ownB||null; AI_CUT=null;
     var N=S.size, b=build(), c=nextColor(), cand=[], i, mx=-1e9;
@@ -6652,15 +6673,17 @@ function aiPick(A,P,humanPassed){
     if(tac && P.tl){ var lmv=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(mm.c!==c){ lmv=mm; break; } }   /* 照棋理：吃、叫吃只在對方上一手附近 3 路內（不在別處攻殺時突然跑去吃） */
       if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:tac.esc}; } }
     var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null, URG=null;
+    var HANG = (N===19 && A.ownB && !P.nohang) ? aiHang(b,c,A) : false;
+    if(tac && N===19 && A.ownB && !P.nohang) tac.cap=tac.cap.filter(function(q){ return !aiCapDead(b,c,A,q); });
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
-    else if(P.urg!==0 && (URG=aiUrg(b,c))){ move=URG[0]; AI_TK=URG[1]; }   /* 緊急手：該提的一定提、大塊被叫吃要救 */
+    else if(P.urg!==0 && (URG=aiUrg(b,c)) && !(URG[1]==="c" && A.ownB && !P.nohang && aiCapDead(b,c,A,URG[0]))){ move=URG[0]; AI_TK=URG[1]; }   /* 緊急手：該提的一定提、大塊被叫吃要救 */
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
-    else if(P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
-    else if(tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
-    else if(P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); })).length){
+    else if(!HANG && P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
+    else if(!HANG && tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
+    else if(!HANG && P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); })).length){
       CUTQ.sort(function(a,z){ return A.pol[z]-A.pol[a]; }); move=CUTQ[0]; AI_TK="p"; }   /* 怕怕病：沒事先補自己的斷點（挑 AI 直覺最高的那個） */
-    else if(P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5; })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
+    else if(!HANG && P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5; })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
     else if(Math.random()<P.err){
       AI_FX=1;
 
