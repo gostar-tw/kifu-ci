@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,aiPickV:aiPickV,tsn:function(c,t){ if(c===0){ AI_TSN={1:0,2:0}; return; } AI_TSN[c]=t?AI_TSN[c]+1:0; },vv:function(){return AI_V},sv:function(){return AI_SV},ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,aiPickV:aiPickV,eyeold:function(v){ AI_EYEOLD=!!v; },tsn:function(c,t){ if(c===0){ AI_TSN={1:0,2:0}; return; } AI_TSN[c]=t?AI_TSN[c]+1:0; },vv:function(){return AI_V},sv:function(){return AI_SV},ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6253,6 +6253,15 @@ function aiEval(){
 function aiOwnEye(g,x,y,c){
   var N=S.size, d=[[1,0],[-1,0],[0,1],[0,-1]];
   for(var k=0;k<4;k++){ var nx=x+d[k][0], ny=y+d[k][1]; if(nx<0||ny<0||nx>=N||ny>=N) continue; if(g[ny*N+nx]!==c) return false; }
+  if(AI_EYEOLD) return true;
+  /* v7.83 eye-shaped point is NOT an eye if a neighbouring own group has only this one liberty (it is in atari: connecting here saves it) */
+  var q0=y*N+x;
+  for(k=0;k<4;k++){ var ax=x+d[k][0], ay=y+d[k][1]; if(ax<0||ay<0||ax>=N||ay>=N) continue;
+    var st=[ay*N+ax], seen={}, other=false; seen[st[0]]=1;
+    while(st.length && !other){ var u=st.pop(), ux=u%N, uy=(u-ux)/N;
+      for(var j=0;j<4;j++){ var bx=ux+d[j][0], by=uy+d[j][1]; if(bx<0||by<0||bx>=N||by>=N) continue; var v=by*N+bx;
+        if(!g[v]){ if(v!==q0){ other=true; break; } } else if(g[v]===c && !seen[v]){ seen[v]=1; st.push(v); } } }
+    if(!other) return false; }
   return true;
 }
 
@@ -6599,6 +6608,7 @@ function aiKoFix(q){
     AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
 }
 var AI_KO=null;
+var AI_EYEOLD=false;
 /* 2026-10-23 高段新挑法 aiPickV：AI 直覺前 5 名都算目數，只在「比最好的一手虧不到 X 目」的手裡挑（照直覺機率，加上棋風偏好）。
    X：全面 vx；中盤高手 打架 vxF／平靜 vx；官子大師 盤面確定前 vx／確定後 vxL；浪漫派 偏好四線以上、緊對方氣的手 */
 function aiPickV(A,P,hp){
