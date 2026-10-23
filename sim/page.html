@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,aiPickV:aiPickV,vv:function(){return AI_V},sv:function(){return AI_SV},ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,aiPickV:aiPickV,tsn:function(c,t){ if(c===0){ AI_TSN={1:0,2:0}; return; } AI_TSN[c]=t?AI_TSN[c]+1:0; },vv:function(){return AI_V},sv:function(){return AI_SV},ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6256,6 +6256,25 @@ function aiOwnEye(g,x,y,c){
   return true;
 }
 
+/* 2026-10-23 征子判斷：q 是自己被叫吃的棋的逃點，逃出去會不會被征吃（一路叫吃到死） */
+function aiGrpL(h,N,p){ var col=h[p], st=[p], seen={}, L={}, nl=0, ss=[]; seen[p]=1;
+  while(st.length){ var u=st.pop(), x=u%N, y=(u-x)/N; ss.push(u); [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!h[v]){ if(!L[v]){ L[v]=1; nl++; } } else if(h[v]===col && !seen[v]){ seen[v]=1; st.push(v); } }); }
+  return {s:ss, libs:Object.keys(L).map(Number)}; }
+function aiPlayC(h,N,q,c){ h[q]=c; var x=q%N, y=(q-x)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(h[v]===3-c){ var G=aiGrpL(h,N,v); if(!G.libs.length) G.s.forEach(function(t){ h[t]=0; }); } }); return aiGrpL(h,N,q).libs.length>0; }
+function aiLadderDead(h0,N,s,c,dp){
+  dp=dp||0; if(dp>60) return false;
+  var G=aiGrpL(h0,N,s); if(G.libs.length!==1) return false;
+  var i, j, esc=false;
+  G.s.forEach(function(t){ var x=t%N, y=(t-x)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(h0[v]===3-c && aiGrpL(h0,N,v).libs.length===1) esc=true; }); });
+  if(esc) return false;   /* 可以提對方叫吃我的子 */
+  var h=Array.prototype.slice.call(h0); if(!aiPlayC(h,N,G.libs[0],c)) return true;
+  var G2=aiGrpL(h,N,s); if(G2.libs.length>=3) return false; if(G2.libs.length<=1) return true;
+  for(i=0;i<2;i++){ var h3=h.slice(), L=G2.libs[i]; if(!aiPlayC(h3,N,L,3-c)) continue;
+    if(aiGrpL(h3,N,L).libs.length<2) continue;   /* 對方叫吃那手自己被叫吃，征不成 */
+    if(aiGrpL(h3,N,s).libs.length===1 && aiLadderDead(h3,N,s,c,dp+1)) return true; }
+  return false;
+}
+function aiEscOK(g,N,q,c){ var x=q%N, y=(q-x)/N, ok=true; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(g[v]===c){ var G=aiGrpL(g,N,v); if(G.libs.length===1 && G.libs[0]===q && aiLadderDead(g,N,v,c)) ok=false; } }); return ok; }
 function aiTac(b,c){
   var N=S.size, g=b.grid, opp=c===1?2:1, seen={}, cap=[], atr=[], i;
   function libsOf(x,y){ var col=g[idx(x,y)], st=[[x,y]], vis={}, L={}, out=[]; vis[key(x,y)]=1;
@@ -6272,7 +6291,7 @@ function aiTac(b,c){
   }
   var esc=[];
   for(i=0;i<N*N;i++){ var x2=i%N, y2=(i-x2)/N; if(g[i]!==c || seen[key(x2,y2)]) continue; seen[key(x2,y2)]=1;
-    var L2=libsOf(x2,y2); if(L2.libs.length===1 && safe(L2.libs[0])) for(var r2=0;r2<Math.min(L2.n,4);r2++) esc.push(L2.libs[0]); }
+    var L2=libsOf(x2,y2); if(L2.libs.length===1 && safe(L2.libs[0]) && (S.size!==19 || aiEscOK(g,S.size,L2.libs[0],c))) for(var r2=0;r2<Math.min(L2.n,4);r2++) esc.push(L2.libs[0]); }
   return {cap:cap, atari:atr, esc:esc};
 }
 
@@ -6529,6 +6548,11 @@ function aiCut(b,c){
   return Object.keys(out).map(Number);
 }
 var AI_OWN=null;
+/* 2026-10-23 跟屁蟲連續：我方最近連續幾手都「跟著對方上一手 2 路內」下 */
+function aiFollowN(c){ var ms=S.moves.slice(0,S.cur), n=0, i; for(i=ms.length-1;i>=1;i--){ var m=ms[i]; if(m.c!==c) continue; var p=ms[i-1]; if(m.x<0||p.x<0||p.c===c||Math.max(Math.abs(m.x-p.x),Math.abs(m.y-p.y))>2) break; n++; } return n; }
+/* 2026-10-23 空地：q 周圍 r 路內都沒有棋子 */
+function aiEmptyAround(g,q,r){ var N=S.size, x=q%N, y=(q-x)/N, dx, dy; for(dy=-r;dy<=r;dy++) for(dx=-r;dx<=r;dx++){ var a=x+dx, e=y+dy; if(a<0||e<0||a>=N||e>=N) continue; if(g[e*N+a]) return false; } return true; }
+var AI_TSN={1:0,2:0};
 function aiSty(q,P,b,c,early){
   var N=S.size, x=q%N, y=(q-x)/N, f=1;
   var line=Math.min(x,y,N-1-x,N-1-y)+1;
@@ -6539,7 +6563,7 @@ function aiSty(q,P,b,c,early){
   if(P.sh && AI_OWN){ var om=(c===1?1:-1)*AI_OWN[q]; if(om<0) f/=1+P.sh*(-om); }   /* 怕怕病：對方的勢力範圍裡不太敢下（不敢去包圍） */
   if(P.cn){ if(!AI_CUT) AI_CUT=aiCut(b,c); if(AI_CUT.indexOf(q)>=0) f*=1+P.cn; }   /* 怕怕病：補斷點的點加權 */
   if(P.cont){ var ms2=S.moves.slice(0,S.cur), nn=0; for(var i2=ms2.length-1;i2>=0 && nn<2;i2--){ var m2=ms2[i2]; if(m2.x<0) continue; nn++; if(Math.max(Math.abs(m2.x-x),Math.abs(m2.y-y))<=3){ f*=1+P.cont; break; } } }   /* 連貫：不要東一手西一手 */
-  if(P.nr){ var ms=S.moves.slice(0,S.cur); for(var i=ms.length-1;i>=0;i--){ var m=ms[i]; if(m.c!==c){ if(m.x>=0 && Math.max(Math.abs(m.x-x),Math.abs(m.y-y))<=2) f*=1+P.nr; break; } } }
+  if(P.nr){ var ms=S.moves.slice(0,S.cur); for(var i=ms.length-1;i>=0;i--){ var m=ms[i]; if(m.c!==c){ if(m.x>=0 && Math.max(Math.abs(m.x-x),Math.abs(m.y-y))<=2){ var fn=P.nrS?aiFollowN(c):0; f*=1+P.nr*((fn>=1 && fn<(P.nrN||4))?P.nrS:1); } break; } } }
   return f;
 }
 var AI_CUT=null;
@@ -6641,7 +6665,7 @@ function aiSaveFix(q,T){
     while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u);
       [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ if(!L[v]){ L[v]=1; nl++; lib=v; } } else if(g[v]===c && !seen[v]){ seen[v]=1; st.push(v); } }); }
     if(nl!==1) continue; var lx=lib%N, ly=(lib-lx)/N; if(!legal(b,lx,ly)) continue;
-    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2) SV.push({p:lib, n:ss.length}); }
+    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2 && aiEscOK(g,N,lib,c)) SV.push({p:lib, n:ss.length}); }
   if(!SV.length || SV.some(function(o){ return o.p===q; })) return Promise.resolve(q);
   SV.sort(function(a,z){ return z.n-a.n; }); SV=SV.slice(0,2);
   var save=S.moves, cur=S.cur, L={};
@@ -6663,7 +6687,7 @@ function aiOneFix(q){
     [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ nl++; lib=v; } else if(g[v]===g[z]) one=false; });
     seen[z]=1; if(!one || nl!==1) continue;                                  /* 單顆、只剩一口氣 */
     var lx=lib%N, ly=(lib-lx)/N; if(!legal(b,lx,ly)) continue;
-    if(own){ var r=aiAfter(g,N,lib,c); if(r && (r.libs>=2 || r.cap) && SAV.indexOf(lib)<0) SAV.push(lib); }
+    if(own){ var r=aiAfter(g,N,lib,c); if(r && (r.libs>=2 || r.cap) && (r.cap || aiEscOK(g,N,lib,c)) && SAV.indexOf(lib)<0) SAV.push(lib); }
     else if(CAP.indexOf(lib)<0) CAP.push(lib); }
   SAV=SAV.slice(0,3); CAP=CAP.slice(0,3);
   var C=[q]; SAV.concat(CAP).forEach(function(p){ if(C.indexOf(p)<0) C.push(p); });
@@ -6694,7 +6718,7 @@ function aiUrg(b,c){
     if((o.s.length>=2 || touch) && o.s.length+(touch?10:0)>bn){ bn=o.s.length+(touch?10:0); best=q; } });
   if(best>=0) return [best,"c"];
   G.forEach(function(o){ if(o.c!==c || o.libs.length!==1 || o.s.length<3) return; var q=o.libs[0], x=q%N, y=(q-x)/N; if(!legal(b,x,y) || aiOwnEye(g,x,y,c)) return;
-    var r=aiAfter(g,N,q,c); if(r && r.libs>=2 && o.s.length>bn){ bn=o.s.length; best=q; } });
+    var r=aiAfter(g,N,q,c); if(r && r.libs>=2 && aiEscOK(g,N,q,c) && o.s.length>bn){ bn=o.s.length; best=q; } });
   return best>=0 ? [best,"s"] : null;
 }
 /* 2026-10-23 (19x19) no brainless side-rules: an own group in atari that is still alive and can escape -> skip side rules */
@@ -6705,7 +6729,7 @@ function aiHang(b,c,A){
       [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ if(!L[v]){ L[v]=1; nl++; lib=v; } } else if(g[v]===c && !seen[v]){ seen[v]=1; st.push(v); } }); }
     if(nl!==1) continue;
     var own=0; ss.forEach(function(s2){ own+=sg*A.ownB[s2]; }); own/=ss.length; if(own<-0.6) continue;
-    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2) return true; }
+    var r=aiAfter(g,N,lib,c); if(r && r.libs>=2 && aiEscOK(g,N,lib,c)) return true; }
   return false;
 }
 /* stones that q would capture are already dead (AI ownership says ours) -> not worth a rule capture */
@@ -6760,11 +6784,11 @@ function aiPick(A,P,humanPassed){
     else if(P.urg!==0 && (URG=aiUrg(b,c)) && !(URG[1]==="c" && A.ownB && !P.nohang && aiCapDead(b,c,A,URG[0]))){ move=URG[0]; AI_TK=URG[1]; }   /* 緊急手：該提的一定提、大塊被叫吃要救 */
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
-    else if(!HANG && P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
+    else if(!HANG && P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && (!P.lnE || aiEmptyAround(b.grid,q,P.lnE)) && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
     else if(!HANG && tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
     else if(!HANG && P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2) && nearLL(q); })).length){
       CUTQ.sort(function(a,z){ return A.pol[z]-A.pol[a]; }); move=CUTQ[0]; AI_TK="p"; }   /* 怕怕病：沒事先補自己的斷點（挑 AI 直覺最高的那個） */
-    else if(!HANG && P.ts>0 && CT && Math.random()<P.ts && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5 && nearLL(q); })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
+    else if(!HANG && P.ts>0 && CT && Math.random()<((P.tsS && AI_TSN[c]>=1 && AI_TSN[c]<(P.tsN||4)) ? P.tsS : P.ts) && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5 && nearLL(q); })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }
     else if(Math.random()<P.err){
       AI_FX=1;
 
