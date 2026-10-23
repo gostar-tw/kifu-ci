@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6573,6 +6573,31 @@ function aiKoFix(q){
     AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
 }
 var AI_KO=null;
+/* 2026-10-23 收官「一顆」（19 路，第 217 手以後）：盤上有被叫吃的單顆子（我的、對方的都算）時，
+   候選＝AI 原本想下的、提對方那顆、救自己那顆（粘劫也是這個），每手都用形勢判斷算目數，
+   最多的那手；差不到 0.5 目就照「救自己 > 原本 > 提對方」 */
+function aiOneFix(q){
+  var N=S.size; if(N!==19 || q<0 || S.moves.length<Math.round(0.6*N*N)) return Promise.resolve(q);
+  var c=nextColor(), b=build(), g=b.grid, sg=(c===1?1:-1), seen={}, CAP=[], SAV=[], z;
+  for(z=0;z<N*N;z++){ if(!g[z] || seen[z]) continue; var x=z%N, y=(z-x)/N, own=g[z]===c, lib=-1, nl=0, one=true;
+    [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(!g[v]){ nl++; lib=v; } else if(g[v]===g[z]) one=false; });
+    seen[z]=1; if(!one || nl!==1) continue;                                  /* 單顆、只剩一口氣 */
+    var lx=lib%N, ly=(lib-lx)/N; if(!legal(b,lx,ly)) continue;
+    if(own){ var r=aiAfter(g,N,lib,c); if(r && (r.libs>=2 || r.cap) && SAV.indexOf(lib)<0) SAV.push(lib); }
+    else if(CAP.indexOf(lib)<0) CAP.push(lib); }
+  SAV=SAV.slice(0,3); CAP=CAP.slice(0,3);
+  var C=[q]; SAV.concat(CAP).forEach(function(p){ if(C.indexOf(p)<0) C.push(p); });
+  if(C.length<2) return Promise.resolve(q);
+  var save=S.moves, cur=S.cur, L={}, ch=Promise.resolve();
+  function leadAfter(p){ var x=p%N; S.moves=save.slice(0,cur).concat([{x:x,y:(p-x)/N,c:c}]); S.cur=cur+1;
+    return aiEval().then(function(E){ S.moves=save; S.cur=cur; return E.lead*sg; }, function(e){ S.moves=save; S.cur=cur; throw e; }); }
+  C.forEach(function(p){ ch=ch.then(function(){ return leadAfter(p).then(function(v){ L[p]=v; }); }); });
+  return ch.then(function(){ var vb=-1e9; C.forEach(function(p){ if(L[p]>vb) vb=L[p]; });
+    function rk(p){ return SAV.indexOf(p)>=0 ? 0 : p===q ? 1 : 2; }
+    var ok=C.filter(function(p){ return L[p]>=vb-0.5; }).sort(function(a,b2){ return rk(a)-rk(b2) || L[b2]-L[a]; });
+    AI_KO=[q,ok[0],C.map(function(p){ return [p,rk(p),Math.round(L[p]*10)/10]; })]; return ok[0]; })
+   .catch(function(){ S.moves=save; S.cur=cur; return q; });
+}
 /* 2026-10-23 緊急手（所有 AI）：互相攻殺剩一口氣時不能不管。
    1. 能提對方 2 子以上，或提掉的子就貼著自己剩一口氣的棋 -> 一定提（挑提最多的）
    2. 自己 3 子以上被叫吃、提不到也能逃出去（逃完 2 口氣以上） -> 逃 */
