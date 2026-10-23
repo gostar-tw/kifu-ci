@@ -6235,7 +6235,7 @@ function aiResign(quick){
   ev("kifu_ai_end",{ai_level:GAME.lv, ai_result:"resign", moves:S.moves.length});
   aiPaint(); aiSave(); aiEndSheet();
 }
-window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,sv:function(){return AI_SV},ko:function(){return AI_KO}};
+window.__t={S:function(){return S},aiAfter:aiAfter,aiOppLibs:aiOppLibs,build:build,aiEval:aiEval,aiPick:aiPick,aiPick2:aiPick2,aiPrmG:aiPrmG,nextColor:nextColor,kgLoad:kgLoad,fx:function(){return [AI_FX,AI_TK,AI_SYQ]},aiSty:aiSty,legal:legal,aiOwnEye:aiOwnEye,aiEarly:aiEarly,setOwn:function(o){AI_OWN=o;AI_CUT=null;},aiEndFix:aiEndFix,aiKoFix:aiKoFix,aiOneFix:aiOneFix,aiSaveFix:aiSaveFix,aiCalm:aiCalm,sv:function(){return AI_SV},ko:function(){return AI_KO}};
 function aiEval(){
 
   var N=S.size, pla=nextColor(), I=kgInput();
@@ -6496,6 +6496,7 @@ function aiPick2a0(A,P,hp){
   var loc=[];
   for(i=0;i<order.length && loc.length<7;i++){ var q=order[i], x=q%N, y=(q-x)/N;
     if(b.grid[q] || !legal(b,x,y) || aiOwnEye(b.grid,x,y,c)) continue;
+    if(N===19){ var ra=aiAfter(b.grid,N,q,c); if(!ra || (!ra.cap && ra.libs<2)) continue; }   /* 2026-10-23 放水不下虎口 */
     if(ms.some(function(m){ return Math.max(gkAbs(m.x-x),gkAbs(m.y-y))<=2; })) loc.push(q); }
   loc=loc.slice(1);
   if(!loc.length) return Promise.resolve([mv,info]);
@@ -6574,6 +6575,31 @@ function aiKoFix(q){
     AI_KO=[q,L[q],best,bv]; return (best>=0 && bv>=L[q]-0.5) ? best : q; }).catch(function(){ S.moves=save; S.cur=cur; return q; });
 }
 var AI_KO=null;
+/* 2026-10-23 實利派「不主動開戰」：(1) 扳、長都是好點時選長（碰對方的子比較少的那手）；
+   (2) 對方上一手附近都安定（沒有 2 口氣以下的棋、形勢判斷都很確定）就手拔去搶空 */
+function aiCalm(A,q,P){
+  var N=S.size; if(N!==19 || q<0 || !A.ownB || !(Math.random()<(P.calm||0))) return q;
+  var c=nextColor(), b=build(), g=b.grid, ms=S.moves.slice(0,S.cur), lm=null, i;
+  for(i=ms.length-1;i>=0;i--){ if(ms[i].c!==c){ lm=ms[i]; break; } }
+  var r0=aiAfter(g,N,q,c); if(!r0 || r0.cap) return q;
+  function adj(z,col){ var x=z%N, y=(z-x)/N, n=0; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a>=0&&e>=0&&a<N&&e<N && g[e*N+a]===col) n++; }); return n; }
+  function agg(z){ return adj(z,3-c)-adj(z,c); }
+  function ok(z){ var x=z%N, y=(z-x)/N; if(g[z] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; var r=aiAfter(g,N,z,c); return r && r.libs>=2; }
+  function dist(z,x,y){ var zx=z%N; return Math.max(Math.abs(zx-x),Math.abs((z-zx)/N-y)); }
+  var lib=aiOppLibs(b,3-c), mine=aiOppLibs(b,c);   /* 我方、對方每個空點旁邊的棋最少幾口氣 */
+  if(lm && lm.x>=0){
+    var calmL=true;
+    for(i=0;i<N*N && calmL;i++){ if(dist(i,lm.x,lm.y)>3) continue;
+      if((lib[i]!=null && lib[i]<=2) || (mine[i]!=null && mine[i]<=2)) calmL=false;
+      else if(g[i] && gkAbs(A.ownB[i])<0.7) calmL=false; }
+    if(calmL){ var bt=-1, bp=-1e9; for(i=0;i<N*N;i++){ if(dist(i,lm.x,lm.y)<=4 || A.pol[i]<A.pol[q]+Math.log(0.3) || A.pol[i]<=bp || !ok(i)) continue; bp=A.pol[i]; bt=i; }
+      if(bt>=0 && bt!==q){ AI_TK="g"; return bt; } }
+  }
+  if(agg(q)>0){ var qx=q%N, qy=(q-qx)/N, bz=-1, bv=-1e9;
+    for(i=0;i<N*N;i++){ if(dist(i,qx,qy)>2 || agg(i)>=agg(q) || A.pol[i]<A.pol[q]+Math.log(0.5) || !ok(i)) continue; if(A.pol[i]>bv){ bv=A.pol[i]; bz=i; } }
+    if(bz>=0){ AI_TK="g"; return bz; } }
+  return q;
+}
 /* 2026-10-23 要子判斷：自己有棋被叫吃、還活著、逃得出去 -> 用形勢判斷算「救」跟「AI 原本那手」差幾目，
    差 T 目以上就一定救（不管規則手、放水）；差不多（不重要的子）就照原本，保留小朋友會犯的錯 */
 function aiSaveFix(q,T){
@@ -6692,7 +6718,7 @@ function aiPick(A,P,humanPassed){
     }
     if(tac) tac.esc=tac.esc.filter(function(q){ var x=q%N, y=(q-x)/N; return Math.min(x,y,N-1-x,N-1-y)>0; });   /* 逃不要逃到一線 */
     if(tac && P.tl){ var lmv=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(mm.c!==c){ lmv=mm; break; } }   /* 照棋理：吃、叫吃只在對方上一手附近 3 路內（不在別處攻殺時突然跑去吃） */
-      if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:tac.esc}; } }
+      if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:(N===19?tac.esc.filter(nearL):tac.esc)}; } }
     var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null, URG=null;
     var HANG = (N===19 && A.ownB && !P.nohang) ? aiHang(b,c,A) : false;
     if(tac && N===19 && A.ownB && !P.nohang) tac.cap=tac.cap.filter(function(q){ return !aiCapDead(b,c,A,q); });
@@ -6711,6 +6737,7 @@ function aiPick(A,P,humanPassed){
       var wn = early ? wide.filter(function(q){ return !edge(q); }) : wide;
       if(P.loc>0 && Math.random()<P.loc){ var near=wn.filter(function(q){ return aiNear(q,2); }); if(near.length) wn=near; }
       if(CT && Math.random()<P.ct){ var tch=[]; for(var tq in CT){ tq=+tq; var tx=tq%N; if(legal(b,tx,(tq-tx)/N) && !aiOwnEye(b.grid,tx,(tq-tx)/N,c) && !(early && edge(tq))) tch.push(tq); } if(tch.length) wn=tch; }
+      if(N===19){ var nt=function(q){ var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2); }; wn=wn.filter(nt); if(!wn.length) wn=wide.filter(nt); }   /* 2026-10-23 放水不下虎口 */
       move=(wn.length?wn:wide)[Math.floor(Math.random()*(wn.length?wn:wide).length)];
     }
     else {
