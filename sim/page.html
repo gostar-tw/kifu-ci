@@ -6554,6 +6554,25 @@ function aiEndFix(A,q){
   var bq=-1, bp=-1e9, z; for(z=0;z<N*N;z++){ var x=z%N, y=(z-x)/N; if(g[z] || A.pol[z]<=bp || !legal(b,x,y) || aiOwnEye(g,x,y,c) || bad(z)) continue; bp=A.pol[z]; bq=z; }
   return (bq<0 || A.pass>bp) ? -1 : bq;
 }
+/* 2026-10-23 緊急手（所有 AI）：互相攻殺剩一口氣時不能不管。
+   1. 能提對方 2 子以上，或提掉的子就貼著自己剩一口氣的棋 -> 一定提（挑提最多的）
+   2. 自己 3 子以上被叫吃、提不到也能逃出去（逃完 2 口氣以上） -> 逃 */
+function aiUrg(b,c){
+  var N=S.size, g=b.grid, opp=3-c, gid=new Int32Array(N*N).fill(-1), G=[], i;
+  for(i=0;i<N*N;i++){ if(!g[i] || gid[i]>=0) continue; var col=g[i], st=[i], ss=[], L={}, nl=0; gid[i]=G.length;
+    while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a;
+        if(!g[v]){ if(!L[v]){ L[v]=1; nl++; } } else if(g[v]===col && gid[v]<0){ gid[v]=G.length; st.push(v); } }); }
+    G.push({c:col, s:ss, libs:Object.keys(L).map(Number)}); }
+  var best=-1, bn=0;
+  G.forEach(function(o,k){ if(o.c!==opp || o.libs.length!==1) return; var q=o.libs[0], x=q%N, y=(q-x)/N; if(!legal(b,x,y)) return;
+    var touch=false; o.s.forEach(function(u){ var ux=u%N, uy=(u-ux)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=ux+d[0], e=uy+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(g[v]===c && G[gid[v]].libs.length===1) touch=true; }); });
+    if((o.s.length>=2 || touch) && o.s.length+(touch?10:0)>bn){ bn=o.s.length+(touch?10:0); best=q; } });
+  if(best>=0) return [best,"c"];
+  G.forEach(function(o){ if(o.c!==c || o.libs.length!==1 || o.s.length<3) return; var q=o.libs[0], x=q%N, y=(q-x)/N; if(!legal(b,x,y) || aiOwnEye(g,x,y,c)) return;
+    var r=aiAfter(g,N,q,c); if(r && r.libs>=2 && o.s.length>bn){ bn=o.s.length; best=q; } });
+  return best>=0 ? [best,"s"] : null;
+}
 function aiPick(A,P,humanPassed){
     AI_FX=0; AI_TK=""; AI_SYQ=-1; AI_OWN=A.ownB||null; AI_CUT=null;
     var N=S.size, b=build(), c=nextColor(), cand=[], i, mx=-1e9;
@@ -6588,8 +6607,9 @@ function aiPick(A,P,humanPassed){
     if(tac) tac.esc=tac.esc.filter(function(q){ var x=q%N, y=(q-x)/N; return Math.min(x,y,N-1-x,N-1-y)>0; });   /* 逃不要逃到一線 */
     if(tac && P.tl){ var lmv=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(mm.c!==c){ lmv=mm; break; } }   /* 照棋理：吃、叫吃只在對方上一手附近 3 路內（不在別處攻殺時突然跑去吃） */
       if(lmv && lmv.x>=0){ var nearL=function(q){ var qx=q%N; return Math.max(Math.abs(qx-lmv.x),Math.abs((q-qx)/N-lmv.y))<=3; }; tac={cap:tac.cap.filter(nearL), atari:tac.atari.filter(nearL), esc:tac.esc}; } }
-    var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null;
+    var CT = (P.ct>0||P.ts>0) ? aiOppLibs(b,c) : null, TSQ=null, CUTQ=null, LNQ=null, URG=null;
     if(!cand.length || (late && pp>=best) || (humanPassed && pp>0.15)) move=-1;
+    else if(P.urg!==0 && (URG=aiUrg(b,c))){ move=URG[0]; AI_TK=URG[1]; }   /* 緊急手：該提的一定提、大塊被叫吃要救 */
     else if(tac && tac.cap.length && Math.random()<TK[0]){ move=tac.cap[Math.floor(Math.random()*tac.cap.length)]; AI_TK="c"; }
     else if(tac && tac.esc.length && Math.random()<P.esc){ move=tac.esc[Math.floor(Math.random()*tac.esc.length)]; AI_TK="s"; }
     else if(P.lnr>0 && S.moves.length<(P.lnT||60) && Math.random()<P.lnr && (LNQ=order.slice(0,P.lnW||20).filter(function(q){ var x=q%N, y=(q-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; return (!P.qx || A.pol[q]>=A.pol[order[0]]+Math.log(P.qx)) && (ln===3||ln===4) && !b.grid[q] && legal(b,x,y) && !aiOwnEye(b.grid,x,y,c); })).length){ move=LNQ[0]; AI_TK="g"; }   /* 圍地型：前 60 手特別想下三、四線（圍地、破地），挑 AI 直覺最高的 */
