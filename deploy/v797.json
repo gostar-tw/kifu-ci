@@ -1,0 +1,1 @@
+[[1477, 1478, ["var APP_VERSION=\"7.97\";"]], [5922, 5924, ["  function paint(){ if(sz===19 && T19S.indexOf(lv)<0){ lv=t19Snap(lv); rg.value=lv; } var bo=aiIsBoss(sz,lv); crw.hidden = true;", "    lvEl.style.minHeight=\"0\"; sl.classList.add(\"ai19\"); sl.classList.toggle(\"aicrown\",false); sl.classList.toggle(\"ai19s\",sz===19);"]]]
