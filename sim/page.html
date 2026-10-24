@@ -6484,7 +6484,8 @@ function aiStay(A,P,r){
       if(!g[v]){ if(!libs[v]){ libs[v]=1; nl++; } } else if(g[v]===col && !seen[v]){ seen[v]=1; st.push(v); } }); }
     if(nl>=2 && nl<=3){ anyW=true; if(col===3-c) for(var L in libs) oppL[L]=1; } }
   if(!anyW) return Promise.resolve(r);
-  function ok(q){ var x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; var rr=aiAfter(g,N,q,c); return rr && (rr.cap || rr.libs>=2); }
+  var SETS=aiSetl(b,c,A);
+  function ok(q){ var x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; if(SETS && SETS(q)) return false; var rr=aiAfter(g,N,q,c); return rr && (rr.cap || rr.libs>=2); }
   function best(f){ var bq=-1, bp=-1e9; for(var q=0;q<N*N;q++){ if(f(q) && ok(q) && A.pol[q]>bp){ bp=A.pol[q]; bq=q; } } return bq; }
   var q=-1, tk="";
   var ol=Object.keys(oppL).map(Number);
@@ -6518,13 +6519,13 @@ function aiPick2a0(A,P,hp){
   if(tk || mv<0 || !(Math.random()<P.err)) return Promise.resolve([mv,info]);
   var ms=S.moves.slice(0,S.cur).filter(function(m){ return m.x>=0; }).slice(-4);
   if(S.cur<6 || !ms.length) return Promise.resolve([mv,info]);
-  var b=build(), order=[], i;
+  var b=build(), order=[], i, SETF0=aiSetl(b,c,A);
   for(i=0;i<N*N;i++) order.push(i);
   order.sort(function(a,z){ return A.pol[z]-A.pol[a]; });
   var loc=[];
   for(i=0;i<order.length && loc.length<7;i++){ var q=order[i], x=q%N, y=(q-x)/N;
     if(b.grid[q] || !legal(b,x,y) || aiOwnEye(b.grid,x,y,c)) continue;
-    if(N===19){ var ra=aiAfter(b.grid,N,q,c); if(!ra || (!ra.cap && ra.libs<2)) continue; }   /* 2026-10-23 放水不下虎口 */
+    if(N===19){ var ra=aiAfter(b.grid,N,q,c); if(!ra || (!ra.cap && ra.libs<2)) continue; if(SETF0 && SETF0(q)) continue; }   /* 2026-10-23 放水不下虎口；10-24 不下已定型的點 */
     if(ms.some(function(m){ return Math.max(gkAbs(m.x-x),gkAbs(m.y-y))<=2; })) loc.push(q); }
   loc=loc.slice(1);
   if(!loc.length) return Promise.resolve([mv,info]);
@@ -6616,7 +6617,18 @@ function aiPickV(A,P,hp){
   AI_FX=0; AI_TK=""; AI_SYQ=-1;
   var U=aiUrg(b,c); if(U && !(U[1]==="c" && aiCapDead(b,c,A,U[0]))){ AI_TK=U[1]; return Promise.resolve(U[0]); }
   var order=[]; for(i=0;i<N*N;i++) order.push(i); order.sort(function(a,z){ return A.pol[z]-A.pol[a]; });
-  var C=[]; for(i=0;i<order.length && C.length<(P.vn||5);i++){ var q=order[i], x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) continue; C.push(q); }
+  var SETV=aiSetl(b,c,A);
+  var C=[]; for(i=0;i<order.length && C.length<(P.vn||5);i++){ var q=order[i], x=q%N, y=(q-x)/N; if(g[q] || !legal(b,x,y) || aiOwnEye(g,x,y,c) || (SETV && SETV(q))) continue; C.push(q); }
+  if(!C.length) for(i=0;i<order.length && C.length<(P.vn||5);i++){ var q1=order[i], x1=q1%N, y1=(q1-x1)/N; if(g[q1] || !legal(b,x1,y1) || aiOwnEye(g,x1,y1,c)) continue; C.push(q1); }
+  /* 2026-10-24 打架沒打完不亂跑：對方上一手 3 路內有兩、三口氣的棋（哪一方都算）= 還在打。
+     那裡 AI 直覺最高的一手也拿來算目數；挑到別處的手要比它多 1 目（P.vstay）才准，不然留下來打 */
+  var lm0=null; for(i=S.cur-1;i>=0;i--){ if(S.moves[i].c!==c){ lm0=S.moves[i]; break; } }
+  var FQ=-1;
+  if(lm0 && lm0.x>=0 && P.vstay!==0){ var Lf1=aiOppLibs(b,c), Lf2=aiOppLibs(b,3-c), hot=false;
+    for(i=0;i<N*N && !hot;i++){ var hx=i%N, hy=(i-hx)/N; if(Math.max(gkAbs(hx-lm0.x),gkAbs(hy-lm0.y))>3) continue; if((Lf1[i]!=null&&Lf1[i]<=3)||(Lf2[i]!=null&&Lf2[i]<=3)) hot=true; }
+    if(hot) for(i=0;i<order.length;i++){ var fq=order[i], fx2=fq%N, fy2=(fq-fx2)/N; if(Math.max(gkAbs(fx2-lm0.x),gkAbs(fy2-lm0.y))>3) continue; if(g[fq] || !legal(b,fx2,fy2) || aiOwnEye(g,fx2,fy2,c) || (SETV && SETV(fq))) continue; var fr=aiAfter(g,N,fq,c); if(!fr || (!fr.cap && fr.libs<2)) continue; FQ=fq; break; }
+    if(FQ>=0 && C.indexOf(FQ)<0) C.push(FQ); }
+  function farQ(p){ if(FQ<0) return false; var px=p%N, py=(p-px)/N; return Math.max(gkAbs(px-lm0.x),gkAbs(py-lm0.y))>3; }
   if(!C.length) return Promise.resolve(-1);
   var late=S.moves.length>=Math.round(0.55*N*N);
   if(late && (A.pass>=A.pol[C[0]] || hp && A.pass>A.pol[C[0]]-1.5)) return Promise.resolve(-1);
@@ -6636,7 +6648,8 @@ function aiPickV(A,P,hp){
     var mx=A.pol[C[0]], W=ok.map(function(p){ var w=Math.exp((A.pol[p]-mx)/(P.vt||1)); if(P.vrom){ var x=p%N, y=(p-x)/N, ln=Math.min(x,y,N-1-x,N-1-y)+1; if(ln>=4) w*=1+P.vrom; if(oppL[p]!=null && oppL[p]<=3) w*=1+P.vrom; } return w; });
     var tot=W.reduce(function(a,z){ return a+z; },0), r=Math.random()*tot, pick=ok[0];
     for(i=0;i<ok.length;i++){ r-=W[i]; if(r<=0){ pick=ok[i]; break; } }
-    if(pick!==best) AI_SYQ=pick;
+    if(farQ(pick) && V[pick] < V[FQ]+(P.vstay!=null?P.vstay:1)){ pick=FQ; AI_TK="l"; }   /* 2026-10-24 打架沒打完不亂跑 */
+    if(pick!==best && AI_TK!=="l") AI_SYQ=pick;
     AI_V=[mode,X,Math.round((vb-V[pick])*10)/10]; return pick; })
    .catch(function(){ return C[0]; });
 }
@@ -6650,7 +6663,8 @@ function aiCalm(A,q,P){
   var r0=aiAfter(g,N,q,c); if(!r0 || r0.cap) return q;
   function adj(z,col){ var x=z%N, y=(z-x)/N, n=0; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a>=0&&e>=0&&a<N&&e<N && g[e*N+a]===col) n++; }); return n; }
   function agg(z){ return adj(z,3-c)-adj(z,c); }
-  function ok(z){ var x=z%N, y=(z-x)/N; if(g[z] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; var r=aiAfter(g,N,z,c); return r && r.libs>=2; }
+  var SETC=aiSetl(b,c,A);
+  function ok(z){ var x=z%N, y=(z-x)/N; if(g[z] || !legal(b,x,y) || aiOwnEye(g,x,y,c)) return false; if(SETC && SETC(z)) return false; var r=aiAfter(g,N,z,c); return r && r.libs>=2; }
   function dist(z,x,y){ var zx=z%N; return Math.max(Math.abs(zx-x),Math.abs((z-zx)/N-y)); }
   var lib=aiOppLibs(b,3-c), mine=aiOppLibs(b,c);   /* 我方、對方每個空點旁邊的棋最少幾口氣 */
   if(lm && lm.x>=0){
@@ -6744,12 +6758,24 @@ function aiHang(b,c,A){
 }
 /* stones that q would capture are already dead (AI ownership says ours) -> not worth a rule capture */
 function aiCapDead(b,c,A,q){
-  var N=S.size, g=b.grid, sg=(c===1?1:-1), x=q%N, y=(q-x)/N, tot=0, n=0, seen={};
+  var N=S.size, g=b.grid, sg=(c===1?1:-1), x=q%N, y=(q-x)/N, tot=0, n=0, seen={}, rescue=false;
   [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var v=e*N+a; if(g[v]!==3-c || seen[v]) return;
     var st=[v], ss=[], nl=0, L={}; seen[v]=1;
     while(st.length){ var u=st.pop(), ux=u%N, uy=(u-ux)/N; ss.push(u); [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d2){ var a2=ux+d2[0], e2=uy+d2[1]; if(a2<0||e2<0||a2>=N||e2>=N) return; var w=e2*N+a2; if(!g[w]){ if(!L[w]){ L[w]=1; nl++; } } else if(g[w]===3-c && !seen[w]){ seen[w]=1; st.push(w); } }); }
-    if(nl===1) ss.forEach(function(s2){ tot+=sg*A.ownB[s2]; n++; }); });
-  return n>0 && tot/n>=0.8;
+    if(nl===1){ ss.forEach(function(s2){ tot+=sg*A.ownB[s2]; n++; var sx=s2%N, sy=(s2-sx)/N; [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d3){ var a3=sx+d3[0], e3=sy+d3[1]; if(a3<0||e3<0||a3>=N||e3>=N) return; var w3=e3*N+a3; if(g[w3]===c && aiGrpL(g,N,w3).libs.length===1) rescue=true; }); }); } });
+  return !rescue && n>0 && tot/n>=0.6;   /* 2026-10-24 0.8 -> 0.6；提了能救自己被叫吃的棋就不算 */
+}
+/* 2026-10-24 已定型的點（19 路）：形勢判斷八成五以上確定是誰的、下了不提子、旁邊沒有兩口氣以下的棋（不管哪一方）
+   -> 下進對方地裡送死、在自己地裡多補一手，看起來很假，所有 AI 都不下（全都是這種點時才照舊） */
+function aiSetl(b,c,A){
+  var N=S.size; if(N!==19 || !A || !A.ownB) return null;
+  var g=b.grid, sg=(c===1?1:-1), lo=null, CK={};
+  return function(q){ if(CK[q]!=null) return CK[q];
+    var o=sg*A.ownB[q], r=false;
+    if(gkAbs(o)>=0.85){ var rr=aiAfter(g,N,q,c);
+      if(!rr) r=true;
+      else if(!rr.cap){ if(!lo) lo=[aiOppLibs(b,c),aiOppLibs(b,3-c)]; r=!((lo[0][q]!=null && lo[0][q]<=2) || (lo[1][q]!=null && lo[1][q]<=2)); } }
+    CK[q]=r; return r; };
 }
 function aiPick(A,P,humanPassed){
     AI_FX=0; AI_TK=""; AI_SYQ=-1; AI_OWN=A.ownB||null; AI_CUT=null;
@@ -6761,14 +6787,16 @@ function aiPick(A,P,humanPassed){
     tot+=ppass;
     var order=[]; for(i=0;i<N*N;i++) order.push(i);
     order.sort(function(a,c2){ return A.pol[c2]-A.pol[a]; });
-    var wide=[];
+    var wide=[], SETF=aiSetl(b,c,A);
+    for(var pass2=0;pass2<2 && !cand.length;pass2++){ wide=[];
     for(i=0;i<order.length && (cand.length<P.k || wide.length<P.W);i++){
       var q=order[i], x=q%N, y=(q-x)/N;
       if(b.grid[q] || !legal(b,x,y)) continue;
       if(aiOwnEye(b.grid,x,y,c)) continue;
+      if(!pass2 && SETF && SETF(q)) continue;   /* 2026-10-24 不下已定型的點 */
       if(cand.length<P.k) cand.push({q:q, p:ps[q]/tot});
       if(wide.length<P.W) wide.push(q);
-    }
+    } }
     var pp=ppass/tot, move=-1;
 
     var best=cand.length?cand[0].p:0;
