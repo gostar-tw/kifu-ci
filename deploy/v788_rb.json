@@ -1,0 +1,1 @@
+[[1463, 1464, ["var APP_VERSION=\"7.87\";"]], [6730, 6731, ["    if(!G.noRs && my>=30 && S.moves.length>=S.size*S.size*0.2){ aiRsAsk(Math.round(my),humanPassed); return; }"]]]
