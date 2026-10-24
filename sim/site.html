@@ -6605,6 +6605,36 @@ function aiTac(b,c){
 function aiNear(q,r){ var N=S.size, x=q%N, y=(q-x)/N, ms=S.moves, n=0;
   for(var i=ms.length-1;i>=0 && n<2;i--){ var m=ms[i]; if(m.x<0) continue; n++; if(Math.max(gkAbs(m.x-x),gkAbs(m.y-y))<=r) return true; } return false; }
 /* 對方每塊棋的氣: 回傳 {點: 那塊棋剩幾口氣 (取最少)} */
+/* 2026-10-24 偷吃（新定義）：找對方 2 顆以上、3～4 口氣的一塊棋，下在它的氣上包圍。
+   上一手是偷吃、對方這手沒去理那塊棋（沒下在它的氣上、也沒貼著它），就接著偷（機率 tsS，最多連續 tsN 手，偷到剩 2 氣也繼續）。
+   對方有回應就停。挑的點：AI 直覺前 tsR 名裡面、不自己送叫吃。 */
+function aiTs2(b,c,A,P,order,nearLL){
+  var N=S.size, g=b.grid, opp=3-c, seen={}, G=[], i, rk={};
+  for(i=0;i<order.length;i++) rk[order[i]]=i;
+  for(i=0;i<N*N;i++){ if(g[i]!==opp || seen[i]) continue;
+    var st=[i], stones=[], libs={}, n=0; seen[i]=1;
+    while(st.length){ var q=st.pop(), x=q%N, y=(q-x)/N; stones.push(q);
+      [[1,0],[-1,0],[0,1],[0,-1]].forEach(function(d){ var a=x+d[0], e=y+d[1]; if(a<0||e<0||a>=N||e>=N) return; var j=e*N+a;
+        if(g[j]===0){ if(!libs[j]){ libs[j]=1; n++; } } else if(g[j]===opp && !seen[j]){ seen[j]=1; st.push(j); } }); }
+    if(stones.length>=2) G.push({s:stones, L:Object.keys(libs).map(Number), n:n}); }
+  function adj(q,set){ var x=q%N, y=(q-x)/N; return set.some(function(z){ var zx=z%N, zy=(z-zx)/N; return gkAbs(zx-x)+gkAbs(zy-y)===1; }); }
+  function pickLib(gr){ var best=-1, br=1e9;
+    gr.L.forEach(function(q){ var x=q%N, y=(q-x)/N; if(rk[q]==null || rk[q]>=(P.tsR||40)) return; if(!legal(b,x,y) || aiOwnEye(g,x,y,c)) return;
+      var r=aiAfter(g,N,q,c); if(!r || (!r.cap && r.libs<2)) return; if(rk[q]<br){ br=rk[q]; best=q; } });
+    return best; }
+  var me=null, op=null; for(i=S.cur-1;i>=0;i--){ var mm=S.moves[i]; if(!op && mm.c!==c) op=mm; else if(op && mm.c===c){ me=mm; break; } }
+  if(AI_TSN[c]>=1 && AI_TSN[c]<(P.tsN||4) && me && me.x>=0){
+    var mq=me.y*N+me.x, oq=(op && op.x>=0) ? op.y*N+op.x : -1;
+    var T=G.filter(function(gr){ return gr.n>=2 && gr.n<=4 && adj(mq,gr.s); });
+    T=T.filter(function(gr){ return oq<0 || (gr.L.indexOf(oq)<0 && !adj(oq,gr.s) && gr.s.indexOf(oq)<0); });   /* 對方沒理這塊棋 */
+    if(T.length && Math.random()<(P.tsS||0.85)){ T.sort(function(a,z){ return a.n-z.n; }); for(i=0;i<T.length;i++){ var q1=pickLib(T[i]); if(q1>=0) return q1; } }
+    return -1; }
+  if(Math.random()>=P.ts) return -1;
+  var T0=G.filter(function(gr){ return gr.n>=3 && gr.n<=4 && gr.L.some(nearLL); });
+  T0.sort(function(a,z){ return a.n-z.n || z.s.length-a.s.length; });
+  for(i=0;i<T0.length;i++){ var q2=pickLib(T0[i]); if(q2>=0) return q2; }
+  return -1;
+}
 function aiOppLibs(b,c){
   var N=S.size, g=b.grid, opp=c===1?2:1, seen={}, out={}, i;
   for(i=0;i<N*N;i++){ if(g[i]!==opp || seen[i]) continue;
@@ -7023,7 +7053,8 @@ function aiPick(A,P,humanPassed){
     else if(N===19 && !HANG && tac && tac.atari.length && Math.random()<TK[1]){ move=tac.atari[Math.floor(Math.random()*tac.atari.length)]; AI_TK="a"; }
     else if(!HANG && P.cnp>0 && Math.random()<P.cnp && (CUTQ=(AI_CUT=aiCut(b,c)).filter(function(q){ var x=q%N; if(!legal(b,x,(q-x)/N) || aiOwnEye(b.grid,x,(q-x)/N,c)) return false; var r=aiAfter(b.grid,N,q,c); return r && (r.cap || r.libs>=2) && nearLL(q); })).length){
       CUTQ.sort(function(a,z){ return A.pol[z]-A.pol[a]; }); move=CUTQ[0]; AI_TK="p"; }   /* 補斷點 */
-    else if(!HANG && P.ts>0 && CT && Math.random()<((P.tsS && AI_TSN[c]>=1 && AI_TSN[c]<(P.tsN||4)) ? P.tsS : P.ts) && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5 && nearLL(q); })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }   /* 偷吃 */
+    else if(!HANG && P.ts>0 && (TSQ=(P.ts2 ? aiTs2(b,c,A,P,order,nearLL) : -1))>=0){ move=TSQ; AI_TK="t"; }   /* 2026-10-24 偷吃（新）：對方 2 子以上、3～4 氣的棋去包圍，對方沒發現就連續偷 */
+    else if(!HANG && !P.ts2 && P.ts>0 && CT && Math.random()<((P.tsS && AI_TSN[c]>=1 && AI_TSN[c]<(P.tsN||4)) ? P.tsS : P.ts) && (TSQ=wide.filter(function(q){ return CT[q]>=4 && CT[q]<=5 && nearLL(q); })).length){ move=TSQ[Math.floor(Math.random()*TSQ.length)]; AI_TK="t"; }   /* 偷吃 */
     else if(Math.random()<P.err){   /* 故意下錯 */
       AI_FX=1;   /* v6.71 記下這手是放水 */
       var wn = early ? wide.filter(function(q){ return !edge(q); }) : wide;
