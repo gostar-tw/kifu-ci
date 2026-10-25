@@ -1,0 +1,1 @@
+[[1484, 1485, ["var APP_VERSION=\"8.02\";"]], [5927, 5927, ["  var qd6=twDay(); if(qd6>=Q26_FROM && qd6<\"2026-11-02\" && !(Q_DAT && Q_DAT.myq && (Q_DAT.myq.w6||0)>=1)){ sz=19; lv=6; hc=0; zpaint(); }"]]]
