@@ -1,0 +1,239 @@
+[
+{
+"id": "q15_v13",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1
+},
+"B": {
+"lv": 13,
+"boss": 1
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "q15_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "w15_v13",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"cnp": 0.15,
+"cn": 3,
+"sh": 0.8,
+"tch": -0.5,
+"sty": 1,
+"ata": 0.3,
+"cap": 0.2,
+"esc": 0.5,
+"tl": 1,
+"cont": 2.0,
+"tkl": 16
+}
+},
+"B": {
+"lv": 13,
+"boss": 1
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "w15_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"cnp": 0.15,
+"cn": 3,
+"sh": 0.8,
+"tch": -0.5,
+"sty": 1,
+"ata": 0.3,
+"cap": 0.2,
+"esc": 0.5,
+"tl": 1,
+"cont": 2.0,
+"tkl": 16
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "j15_v13",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"lnr": 0.45,
+"lnW": 20,
+"lnT": 100,
+"lnE": 2,
+"calm": 0.6,
+"qx": 0.2
+}
+},
+"B": {
+"lv": 13,
+"boss": 1
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "j15_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"lnr": 0.45,
+"lnW": 20,
+"lnT": 100,
+"lnE": 2,
+"calm": 0.6,
+"qx": 0.2
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "r15a_v13",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 4,
+"vrom": 2
+}
+},
+"B": {
+"lv": 13,
+"boss": 1
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "r15a_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 4,
+"vrom": 2
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "r15b_v13",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 6,
+"vrom": 2
+}
+},
+"B": {
+"lv": 13,
+"boss": 1
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "r15b_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 15,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 6,
+"vrom": 2
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+}
+]
