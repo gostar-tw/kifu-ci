@@ -1,0 +1,57 @@
+[
+{
+"id": "j1_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 20,
+"full": 1,
+"add": {
+"lnr": 0.45,
+"lnW": 20,
+"lnT": 100,
+"lnE": 2,
+"calm": 0.6
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+},
+{
+"id": "j2_vmid",
+"N": 19,
+"page": "page.html",
+"A": {
+"lv": 20,
+"full": 1,
+"add": {
+"lnr": 0.45,
+"lnW": 20,
+"lnT": 100,
+"lnE": 2,
+"calm": 0.6,
+"qx": 0.2
+}
+},
+"B": {
+"lv": 17,
+"boss": 1,
+"ov": {
+"vpick": 1,
+"vx": 3,
+"vxF": 0.5
+}
+},
+"one": 1,
+"svT": 2
+}
+]
