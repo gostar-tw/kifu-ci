@@ -23,7 +23,7 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
    if(P.calm && !fx && !tk){const qc=K.aiCalm(A,q,P);if(qc!==q){q=qc;tk='g';sy=1;}}
    {const T=(isA?sp:m.B).svT||(m.svT||0);if(T>0){const q1=await K.aiSaveFix(q,T);if(q1!==q){q=q1;fx=0;tk='sv';sy=0;}}}
    {const q2=K.aiEndFix(A,q);if(q2!==q){q=q2;fx=0;tk='';sy=0;}}
-   if(!m.noko){const q3=await (m.one?K.aiOneFix(q):K.aiKoFix(q));if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
+   if(!m.noko){const q3=await (m.one?K.aiOneFix(q,A,P):K.aiKoFix(q));if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
    if(q>=0){const x=q%N;S.moves.push({x,y:(q-x)/N,c});S.cur=S.moves.length;const hk=Array.prototype.join.call(K.build().grid,'');S.moves.pop();S.cur=S.moves.length;if(seen.has(hk)){q=-1;fx=0;tk='';sy=0;}}   // 全局同形：會回到之前出現過的盤面就虛手
    if(q<0){S.moves.push({x:-1,y:-1,c});o.push(-1);passes++;S.cur=S.moves.length;if(passes>=2)break;}
    else{passes=0;K.tsn(c,tk==='t');const x=q%N;S.moves.push({x,y:(q-x)/N,c});o.push([x,(q-x)/N,fx,tk,sy]);S.cur=S.moves.length;seen.add(Array.prototype.join.call(K.build().grid,''));}}

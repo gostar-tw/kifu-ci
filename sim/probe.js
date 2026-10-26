@@ -18,7 +18,7 @@ for(const lv of lvs){
    if(G.boss){const rr=await K.aiPick2(A,P,passes>0);q=rr[0];fx=rr[1].fx;tk=rr[1].tk;} else {q=K.aiPick(A,P,passes>0);const f=K.fx();fx=f[0];tk=f[1];}
    const t2=performance.now();
    if(P.calm&&!fx&&!tk){q=K.aiCalm(A,q,P);}
-   q=K.aiEndFix(A,q); q=await K.aiOneFix(q); const t3=performance.now();
+   q=K.aiEndFix(A,q); q=await K.aiOneFix(q,A,P); const t3=performance.now();
    T.push([S.moves.length,Math.round(t1-t0),Math.round(t2-t1),Math.round(t3-t2),nrun-n0]);
    if(q<0){S.moves.push({x:-1,y:-1,c});S.cur=S.moves.length;passes++;if(passes>=2)break;}
    else{passes=0;K.tsn(c,tk==='t');const x=q%N;S.moves.push({x,y:(q-x)/N,c});S.cur=S.moves.length;}}

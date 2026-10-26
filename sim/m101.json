@@ -1,0 +1,70 @@
+[
+{
+"id": "fast_l6",
+"N": 19,
+"page": "site3.html",
+"A": {
+"lv": 6,
+"boss": 1
+},
+"B": {
+"lv": 6,
+"boss": 1,
+"ov": {
+"fast": 0
+}
+},
+"one": 1
+},
+{
+"id": "fast_l12",
+"N": 19,
+"page": "site3.html",
+"A": {
+"lv": 12,
+"boss": 1
+},
+"B": {
+"lv": 12,
+"boss": 1,
+"ov": {
+"fast": 0
+}
+},
+"one": 1
+},
+{
+"id": "fast_l13",
+"N": 19,
+"page": "site3.html",
+"A": {
+"lv": 13,
+"boss": 1
+},
+"B": {
+"lv": 13,
+"boss": 1,
+"ov": {
+"fast": 0
+}
+},
+"one": 1
+},
+{
+"id": "fast_l20",
+"N": 19,
+"page": "site3.html",
+"A": {
+"lv": 20,
+"full": 1
+},
+"B": {
+"lv": 20,
+"full": 1,
+"add": {
+"fast": 0
+}
+},
+"one": 1
+}
+]
