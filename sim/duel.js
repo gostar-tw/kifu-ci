@@ -14,7 +14,7 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
  const r=await p.evaluate(async([g,m])=>{const K=window.__t,S=K.S(),N=m.N;
   const mk=s=>{const P=K.aiPrmG({lv:s.lv,sz:s.psz||N,boss:!!s.boss});Object.assign(P,s.ov||{});Object.keys(P).forEach(k=>{if(k.length>1&&k.endsWith('x')&&typeof P[k.slice(0,-1)]==='number'){P[k.slice(0,-1)]*=P[k];delete P[k];}});return P;};
   const PA=mk(m.A),PB=mk(m.B);const aBlack=g%2===0;
-  S.size=N;S.moves=[];S.cur=0;S.setup={};S.extra={};S.tryMoves=[];S.ha=0;S.km=null;let passes=0;const o=[];const seen=new Set();K.tsn(0);
+  const BL={a:[],b:[]};S.size=N;S.moves=[];S.cur=0;S.setup={};S.extra={};S.tryMoves=[];S.ha=0;S.km=null;let passes=0;const o=[];const seen=new Set();K.tsn(0);
   for(let t=0;t<(m.T||Math.round(N*N*1.25));t++){const A=await K.aiEval();const c=K.nextColor();const isA=(c===1)===aBlack;const sp=isA?m.A:m.B,P=sp.full?Object.assign(K.aiPrmG({lv:20,sz:19}),(sp.ov&&sp.ov.late1)?(S.cur>=(sp.ov.lop||30)?{k:1,tie:0,tmp:0.15}:{k:4,tmp:1.2}):{},sp.add||{}):(isA?PA:PB);   /* 2026-10-25 late1: 30 手後只下第 1 名 */let q,fx=0,tk='',sy=0;K.eyeold(!!(sp.ov&&sp.ov.noeye));
    if(sp.ov&&sp.ov.fixr){const r=sp.ov.fixr,bb=K.build(),ord=[];for(let i=0;i<N*N;i++)ord.push(i);ord.sort((a,z)=>A.pol[z]-A.pol[a]);const ok=ord.filter(i=>!bb.grid[i]&&K.legal(bb,i%N,(i-i%N)/N));q=ok.length?ok[Math.min(r,ok.length)-1]:-1;}   // 2026-10-25 固定挑 AI 直覺第 r 名
    else if(sp.ov&&sp.ov.vpick){q=await K.aiPickV(A,P,passes>0);const f=K.fx();tk=f[1];sy=(f[2]===q)?1:0;}
@@ -23,7 +23,8 @@ for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if
    if(P.calm && !fx && !tk){const qc=K.aiCalm(A,q,P);if(qc!==q){q=qc;tk='g';sy=1;}}
    {const T=(isA?sp:m.B).svT||(m.svT||0);if(T>0){const q1=await K.aiSaveFix(q,T);if(q1!==q){q=q1;fx=0;tk='sv';sy=0;}}}
    {const q2=K.aiEndFix(A,q);if(q2!==q){q=q2;fx=0;tk='';sy=0;}}
-   if(!m.noko){const q3=await (m.one?K.aiOneFix(q,A,P):K.aiKoFix(q));if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
+   if(P.bbN&&K.aiBlunder){const bl=isA?BL.a:BL.b;const bq=await K.aiBlunder(A,q,P,bl);if(bq>=0){q=bq;fx=1;tk='b';sy=0;bl.push(S.moves.length);}}
+   if(!m.noko&&tk!=='b'){const q3=await (m.one?K.aiOneFix(q,A,P):K.aiKoFix(q));if(q3!==q){q=q3;fx=0;tk='';sy=0;}}
    if(q>=0){const x=q%N;S.moves.push({x,y:(q-x)/N,c});S.cur=S.moves.length;const hk=Array.prototype.join.call(K.build().grid,'');S.moves.pop();S.cur=S.moves.length;if(seen.has(hk)){q=-1;fx=0;tk='';sy=0;}}   // 全局同形：會回到之前出現過的盤面就虛手
    if(q<0){S.moves.push({x:-1,y:-1,c});o.push(-1);passes++;S.cur=S.moves.length;if(passes>=2)break;}
    else{passes=0;K.tsn(c,tk==='t');const x=q%N;S.moves.push({x,y:(q-x)/N,c});o.push([x,(q-x)/N,fx,tk,sy]);S.cur=S.moves.length;seen.add(Array.prototype.join.call(K.build().grid,''));}}
