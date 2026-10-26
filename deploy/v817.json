@@ -1,0 +1,1 @@
+[[1486, 1487, ["var APP_VERSION=\"8.17\";"]], [2352, 2352, ["      ctx.fillText(COLS[i],px(L,i),px(L,S.size-1)+L.cell*0.66);", "      ctx.fillText(String(S.size-i),px(L,S.size-1)+L.cell*0.66,px(L,i));"]]]
