@@ -13,8 +13,8 @@ await p.evaluate(()=>window.__t.kgLoad());
 for(let g=G0;g<G0+G;g++)for(const m of ms){ if(done.has(m.id+'-'+g))continue; if(Date.now()>TEND){console.log('時間到');await b.close();return;}
  const r=await p.evaluate(async([g,m])=>{const K=window.__t,S=K.S(),N=m.N;
   const mk=s=>{const P=K.aiPrmG({lv:s.lv,sz:s.psz||N,boss:!!s.boss});Object.assign(P,s.ov||{});Object.keys(P).forEach(k=>{if(k.length>1&&k.endsWith('x')&&typeof P[k.slice(0,-1)]==='number'){P[k.slice(0,-1)]*=P[k];delete P[k];}});return P;};
-  const PA=mk(m.A),PB=mk(m.B);const aBlack=g%2===0;
-  const BL={a:[],b:[]};S.size=N;S.moves=[];S.cur=0;S.setup={};S.extra={};S.tryMoves=[];S.ha=0;S.km=null;let passes=0;const o=[];const seen=new Set();K.tsn(0);
+  const PA=mk(m.A),PB=mk(m.B);const aBlack=m.ha?true:g%2===0;
+  const BL={a:[],b:[]};S.size=N;S.moves=[];S.cur=0;S.setup={};S.extra={};S.tryMoves=[];S.ha=0;S.km=null;S.first=1;if(m.ha)K.setHandi(m.ha);let passes=0;const o=[];const seen=new Set();K.tsn(0);
   for(let t=0;t<(m.T||Math.round(N*N*1.25));t++){const A=await K.aiEval();const c=K.nextColor();const isA=(c===1)===aBlack;const sp=isA?m.A:m.B,P=sp.full?Object.assign(K.aiPrmG({lv:20,sz:19}),(sp.ov&&sp.ov.late1)?(S.cur>=(sp.ov.lop||30)?{k:1,tie:0,tmp:0.15}:{k:4,tmp:1.2}):{},sp.add||{}):(isA?PA:PB);   /* 2026-10-25 late1: 30 手後只下第 1 名 */let q,fx=0,tk='',sy=0;K.eyeold(!!(sp.ov&&sp.ov.noeye));
    if(sp.ov&&sp.ov.fixr){const r=sp.ov.fixr,bb=K.build(),ord=[];for(let i=0;i<N*N;i++)ord.push(i);ord.sort((a,z)=>A.pol[z]-A.pol[a]);const ok=ord.filter(i=>!bb.grid[i]&&K.legal(bb,i%N,(i-i%N)/N));q=ok.length?ok[Math.min(r,ok.length)-1]:-1;}   // 2026-10-25 固定挑 AI 直覺第 r 名
    else if(sp.ov&&sp.ov.vpick){q=await K.aiPickV(A,P,passes>0);const f=K.fx();tk=f[1];sy=(f[2]===q)?1:0;}
