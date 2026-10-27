@@ -11,7 +11,7 @@ const PAGE='https://www.gostar.tw/p/kifu.html';
  const CACHE=require('path').join(__dirname,'cache','kifu.html');
  let html0='';
  for(let i=0;i<3;i++){
-  try{html0=await (await fetch((i%2?'https://www.gostar.tw/p/kifu-play.html':PAGE)+'?nc='+Date.now(),{headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36','Accept-Language':'zh-TW,zh;q=0.9'}})).text();}catch(e){html0='';}
+  try{html0=await (await fetch(PAGE+'?nc='+Date.now(),{headers:{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0 Safari/537.36','Accept-Language':'zh-TW,zh;q=0.9'}})).text();}catch(e){html0='';}
   if(html0.indexOf(MK)>=0)break; await new Promise(r=>setTimeout(r,5000));
  }
  if(html0.indexOf(MK)>=0){fs.mkdirSync(require('path').dirname(CACHE),{recursive:true});fs.writeFileSync(CACHE,html0);}
