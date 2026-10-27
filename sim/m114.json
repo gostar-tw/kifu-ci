@@ -1,0 +1,130 @@
+[
+{
+"id": "9v10e3",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 9,
+"boss": 1
+},
+"B": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20,
+"err": 0.3
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "10e3v11",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20,
+"err": 0.3
+}
+},
+"B": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "9v10e25",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 9,
+"boss": 1
+},
+"B": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20,
+"err": 0.25
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "10e25v11",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20,
+"err": 0.25
+}
+},
+"B": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "11v12",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 12,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+}
+]
