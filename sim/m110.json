@@ -1,0 +1,221 @@
+[
+{
+"id": "9v10bb2",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 9,
+"boss": 1
+},
+"B": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "9v10bb3",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 9,
+"boss": 1
+},
+"B": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 3,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "9v10bb4",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 9,
+"boss": 1
+},
+"B": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "11bb1v12",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 1,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 12,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "11bb2v12",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 12,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "11bb3v12",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 3,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 12,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "10bb3v11bb1",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 3,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 1,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "10bb3v11bb2",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 3,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "10bb4v11bb2",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 10,
+"boss": 1,
+"ov": {
+"bbN": 4,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"B": {
+"lv": 11,
+"boss": 1,
+"ov": {
+"bbN": 2,
+"bbP": 0.4,
+"bbGap": 16,
+"bbLo": 3,
+"bbHi": 20
+}
+},
+"one": 1,
+"ha": 2
+}
+]
