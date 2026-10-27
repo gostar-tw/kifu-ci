@@ -1,0 +1,1 @@
+[[1493, 1494, ["var APP_VERSION=\"8.20\";"]], [6466, 6467, ["  var b={action:\"hb\", u:deviceId(), n:(PL_ME ? PL_ME.n : (lsGet(\"gk_aname\")||\"\")), s:g?\"g\":(pk?\"p\":\"o\"), z:g?S.size:0, l:g?GAME.lv:0, m:g?S.moves.length:0, i:Math.floor((Date.now()-HB_ACT)/60000)};"]]]
