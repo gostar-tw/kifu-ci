@@ -1,0 +1,1 @@
+[[1508, 1509, ["var APP_VERSION=\"8.25\";"]], [3065, 3066, ["        window.ort.env.wasm.wasmPaths=base; window.ort.env.wasm.numThreads=1; if(/[?&]test=1/.test(location.search)) window.ort.env.wasm.proxy=true;"]]]
