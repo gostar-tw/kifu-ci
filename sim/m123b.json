@@ -1,0 +1,89 @@
+[
+{
+"id": "h0_6v7",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 6,
+"boss": 1
+},
+"B": {
+"lv": 7,
+"boss": 1
+},
+"one": 1
+},
+{
+"id": "h2_6v7",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 6,
+"boss": 1
+},
+"B": {
+"lv": 7,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "h0_7v8",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 7,
+"boss": 1
+},
+"B": {
+"lv": 8,
+"boss": 1
+},
+"one": 1
+},
+{
+"id": "h2_7v8",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 7,
+"boss": 1
+},
+"B": {
+"lv": 8,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+},
+{
+"id": "h0_8v9",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 8,
+"boss": 1
+},
+"B": {
+"lv": 9,
+"boss": 1
+},
+"one": 1
+},
+{
+"id": "h2_8v9",
+"N": 19,
+"page": "site9.html",
+"A": {
+"lv": 8,
+"boss": 1
+},
+"B": {
+"lv": 9,
+"boss": 1
+},
+"one": 1,
+"ha": 2
+}
+]
