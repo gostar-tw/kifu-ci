@@ -1,0 +1,1 @@
+[[791, 792, []], [1529, 1530, ["var APP_VERSION=\"8.45\";"]], [5406, 5407, ["  if(r.querySelector('[data-k=\"f\"]')){ r.querySelector('[data-k=\"f\"]').onclick=function(){ plFriends(); }; r.classList.add(\"pl6\"); }"]]]
