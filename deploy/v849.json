@@ -1,0 +1,1 @@
+[[1530, 1531, ["var APP_VERSION=\"8.49\";"]], [5606, 5607, ["      var sub=(f.wk?t(\"frWk\").replace(\"{n}\",f.wk):t(\"frWk0\"))+(f.tot!=null?\"\\u30fb\"+t(\"frTot\").replace(\"{n}\",f.tot):\"\");"]]]
