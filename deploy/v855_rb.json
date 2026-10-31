@@ -1,0 +1,1 @@
+[[793, 794, [".gk-sheet .plit.plgo2{cursor:pointer} .gk-sheet .plar{flex:0 0 auto; color:#0284c7; font-size:24px; font-weight:900; margin-left:2px}"]], [1532, 1533, ["var APP_VERSION=\"8.54\";"]], [5626, 5628, ["          var bb=it.querySelector(\"button\"); if(bb) bb.onclick=function(){ bb.disabled=true; call({action:\"pfr\", add:x.n}); };"]]]
