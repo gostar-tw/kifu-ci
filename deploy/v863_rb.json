@@ -1,0 +1,1 @@
+[[1550, 1551, ["var APP_VERSION=\"8.62\";"]], [3666, 3667, ["        ev(\"kifu_sgf_in\",{}); markUse(); draw();"]], [3677, 3684, []], [3708, 3709, ["      ev(\"kifu_fox_in\",{}); closeSheet(); markUse(); paintSizeBtns(); draw();"]]]
