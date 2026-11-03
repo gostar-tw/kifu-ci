@@ -1,0 +1,1 @@
+[[1579, 1580, ["var APP_VERSION=\"8.70\";"]], [5772, 5773, ["      r.innerHTML='<span class=\"frav\">'+frFace(f.n)+'</span><span class=\"plt\"><b>'+plE(f.n)+(mu===null||mu?'':'<em class=\"frmu no\">'+t(\"frMuN\")+'</em>')+'</b><small>'+plE(sub)+'</small></span><span class=\"plgo\">'+t(\"plLook\")+'</span>';"]]]
