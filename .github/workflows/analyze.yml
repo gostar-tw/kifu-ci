@@ -24,7 +24,11 @@ jobs:
           key: kifu-page-${{ github.run_id }}
           restore-keys: kifu-page-
       - name: 安裝瀏覽器
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install chromium   # 瀏覽器本體 (Playwright 自己的下載站)
+      - name: 補系統套件（字型等；Ubuntu 下載站連不上也照跑，分析用不到這些字型）
+        continue-on-error: true
+        timeout-minutes: 4
+        run: npx playwright install-deps chromium
       - name: 分析＋收發講評
         env:
           KIFU_URL: ${{ secrets.KIFU_URL }}
